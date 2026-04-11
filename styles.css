@@ -87,20 +87,29 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-family);
-  width: 400px;
   min-height: 180px;
   background: var(--color-background);
   color: var(--color-on-surface);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
   padding: var(--spacing-lg);
-  padding-bottom: calc(var(--spacing-lg) + 60px); /* Space for sticky action bar */
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* ============================================
@@ -160,7 +169,7 @@ body.sidebar-mode {
 }
 
 body.sidebar-mode .container {
-  max-width: 480px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -187,26 +196,27 @@ body.sidebar-mode .container {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-sm);
   background: var(--color-surface-variant);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .auth-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: var(--shadow-1);
+  flex-shrink: 0;
 }
 
 .auth-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .auth-icon.connected {
@@ -223,6 +233,21 @@ body.sidebar-mode .container {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-on-surface-variant);
+  flex: 1;
+}
+
+/* Auth buttons row - side by side with status */
+.auth-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.auth-row .btn {
+  flex: 1;
+  margin-bottom: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 13px;
 }
 
 /* ============================================
@@ -741,24 +766,27 @@ select:hover:not(:focus) {
 }
 
 /* ============================================
-   Sticky Action Bar
+   Debug Toggle Section
+   ============================================ */
+#debug-toggle-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* ============================================
+   Action Bar (always visible at bottom)
    ============================================ */
 .action-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-surface);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
-  z-index: 100;
+  flex-shrink: 0;
 }
 
 body.sidebar-mode .action-bar {
-  max-width: 480px;
-  margin: 0 auto;
-  left: 50%;
-  transform: translateX(-50%);
+  max-width: 100%;
+  margin: 0;
+  left: 0;
+  transform: none;
 }
 
 /* ============================================

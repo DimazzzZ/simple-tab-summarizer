@@ -30,4 +30,4 @@ yarn-error.log*
 # Chrome extension specific
 # Keep icons but ignore any generated assets
 icons/*.png
-!icons/icon.svg
+!icons/icon.png
