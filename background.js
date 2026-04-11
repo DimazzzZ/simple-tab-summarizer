@@ -381,7 +381,59 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(error => sendResponse({ error: error.message }));
     return true;
   }
+
+  if (message.action === 'set_display_mode') {
+    setDisplayMode(message.mode)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+
+  if (message.action === 'get_display_mode') {
+    getDisplayMode()
+      .then(mode => sendResponse({ mode }))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
 });
+
+// ============================================
+// Display Mode Management (Popup vs Sidebar)
+// ============================================
+
+async function getDisplayMode() {
+  const result = await chrome.storage.local.get('displayMode');
+  return result.displayMode || 'popup';
+}
+
+async function setDisplayMode(mode) {
+  await chrome.storage.local.set({ displayMode: mode });
+  
+  if (mode === 'sidebar') {
+    // Sidebar mode: action click toggles side panel
+    chrome.action.setPopup({ popup: '' });
+    chrome.sidePanel.setOptions({ enabled: true, path: 'sidebar.html' });
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  } else {
+    // Popup mode: action click opens popup
+    chrome.action.setPopup({ popup: 'popup.html' });
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+    // Close any open side panel
+    try {
+      const windows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+      for (const win of windows) {
+        try { await chrome.sidePanel.setOptions({ enabled: false }); } catch {}
+        try { await chrome.sidePanel.setOptions({ enabled: true, path: 'sidebar.html' }); } catch {}
+      }
+    } catch {}
+  }
+}
+
+// Initialize display mode on startup
+(async function initDisplayMode() {
+  const mode = await getDisplayMode();
+  await setDisplayMode(mode);
+})();
 
 // ============================================
 // Summarization Logic
