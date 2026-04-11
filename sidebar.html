@@ -8,129 +8,134 @@
 </head>
 <body class="sidebar-mode">
   <div class="container">
+    <!-- Header -->
     <header>
-      <h1>📑 Tab Group Summarizer</h1>
-      <button id="mode-toggle" class="mode-toggle" title="Switch to Popup mode">📌 Popup</button>
+      <h1>Tab Group Summarizer</h1>
+      <button id="mode-toggle" class="mode-toggle" title="Switch to Popup mode">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+        <span>Popup</span>
+      </button>
     </header>
 
-    <!-- Auth Section -->
-    <div id="auth-section" class="section">
+    <!-- Auth Card -->
+    <div id="auth-section" class="card">
       <div id="auth-status" class="auth-box">
-        <span id="auth-icon" class="auth-icon">🔌</span>
+        <span id="auth-icon" class="auth-icon disconnected">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </span>
         <span id="auth-text">Not connected</span>
       </div>
       <button id="connect-btn" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         <span class="btn-text">Connect to ChatGPT</span>
       </button>
       <button id="disconnect-btn" class="btn btn-secondary hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span class="btn-text">Disconnect</span>
       </button>
     </div>
 
-    <!-- Source Selection -->
-    <div id="source-section" class="section">
-      <label for="source-select">Summarize From:</label>
-      <select id="source-select" class="source-select">
-        <option value="tabGroup">Tab Group</option>
-        <option value="readingList">Reading List</option>
-      </select>
-    </div>
-
-    <!-- Group Selection -->
-    <div id="group-section" class="section">
-      <label for="group-select">Select Tab Group:</label>
-      <select id="group-select" class="group-select">
-        <option value="">-- Select a group --</option>
-      </select>
-      <div id="no-groups" class="no-groups hidden">
-        <p>No tab groups found. Create one by right-clicking a tab → "Add tab to new group".</p>
+    <!-- Configuration Card -->
+    <div class="card">
+      <div class="form-group">
+        <label for="source-select">Summarize From</label>
+        <select id="source-select" class="source-select">
+          <option value="tabGroup">Tab Group</option>
+          <option value="readingList">Reading List</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="language-select">Summary Language</label>
+        <select id="language-select" class="language-select">
+          <option value="Arabic">Arabic</option>
+          <option value="Bengali">Bengali</option>
+          <option value="Bulgarian">Bulgarian</option>
+          <option value="Catalan">Catalan</option>
+          <option value="Chinese">Chinese</option>
+          <option value="Croatian">Croatian</option>
+          <option value="Czech">Czech</option>
+          <option value="Danish">Danish</option>
+          <option value="Dutch">Dutch</option>
+          <option value="English" selected>English</option>
+          <option value="Estonian">Estonian</option>
+          <option value="Finnish">Finnish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+          <option value="Greek">Greek</option>
+          <option value="Hebrew">Hebrew</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Hungarian">Hungarian</option>
+          <option value="Indonesian">Indonesian</option>
+          <option value="Italian">Italian</option>
+          <option value="Japanese">Japanese</option>
+          <option value="Korean">Korean</option>
+          <option value="Latvian">Latvian</option>
+          <option value="Lithuanian">Lithuanian</option>
+          <option value="Malay">Malay</option>
+          <option value="Norwegian">Norwegian</option>
+          <option value="Persian">Persian</option>
+          <option value="Polish">Polish</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Romanian">Romanian</option>
+          <option value="Russian">Russian</option>
+          <option value="Serbian">Serbian</option>
+          <option value="Slovak">Slovak</option>
+          <option value="Slovenian">Slovenian</option>
+          <option value="Spanish">Spanish</option>
+          <option value="Swedish">Swedish</option>
+          <option value="Thai">Thai</option>
+          <option value="Turkish">Turkish</option>
+          <option value="Ukrainian">Ukrainian</option>
+          <option value="Urdu">Urdu</option>
+          <option value="Vietnamese">Vietnamese</option>
+        </select>
       </div>
     </div>
 
-    <!-- Reading List Section -->
-    <div id="readinglist-section" class="section hidden">
+    <!-- Group Selection Card -->
+    <div id="group-section" class="card hidden">
+      <div class="form-group">
+        <label for="group-select">Select Tab Group</label>
+        <select id="group-select" class="group-select">
+          <option value="">-- Select a group --</option>
+        </select>
+      </div>
+      <div id="no-groups" class="empty-state hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 2v4"/><path d="M18 2v4"/><path d="M2 10h20"/></svg>
+        <p>No tab groups found.<br>Create one by right-clicking a tab → "Add tab to new group".</p>
+      </div>
+    </div>
+
+    <!-- Reading List Card -->
+    <div id="readinglist-section" class="card hidden">
       <div class="pages-header">
-        <label>Reading List:</label>
+        <label>Reading List</label>
         <div class="select-all-btns">
-          <button id="select-all-btn" class="btn-small">Select All</button>
-          <button id="deselect-all-btn" class="btn-small">Deselect All</button>
+          <button id="rl-select-all-btn" class="btn-small">Select All</button>
+          <button id="rl-deselect-all-btn" class="btn-small">Deselect</button>
         </div>
       </div>
       <div id="readinglist-list" class="pages-list"></div>
-      <div id="no-readinglist" class="no-groups hidden">
-        <p>No reading list entries found. Add pages to your Reading List first.</p>
+      <div id="no-readinglist" class="empty-state hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <p>No reading list entries found.<br>Add pages to your Reading List first.</p>
       </div>
     </div>
 
-    <!-- Page Selection (Checkboxes) -->
-    <div id="pages-section" class="section hidden">
+    <!-- Page Selection Card -->
+    <div id="pages-section" class="card hidden">
       <div class="pages-header">
-        <label>Select Pages:</label>
+        <label>Select Pages</label>
         <div class="select-all-btns">
           <button id="select-all-btn" class="btn-small">Select All</button>
-          <button id="deselect-all-btn" class="btn-small">Deselect All</button>
+          <button id="deselect-all-btn" class="btn-small">Deselect</button>
         </div>
       </div>
       <div id="pages-list" class="pages-list"></div>
     </div>
 
-    <!-- Language Selection -->
-    <div id="language-section" class="section">
-      <label for="language-select">Summary Language:</label>
-      <select id="language-select" class="language-select">
-        <option value="Arabic">Arabic</option>
-        <option value="Bengali">Bengali</option>
-        <option value="Bulgarian">Bulgarian</option>
-        <option value="Catalan">Catalan</option>
-        <option value="Chinese">Chinese</option>
-        <option value="Croatian">Croatian</option>
-        <option value="Czech">Czech</option>
-        <option value="Danish">Danish</option>
-        <option value="Dutch">Dutch</option>
-        <option value="English" selected>English</option>
-        <option value="Estonian">Estonian</option>
-        <option value="Finnish">Finnish</option>
-        <option value="French">French</option>
-        <option value="German">German</option>
-        <option value="Greek">Greek</option>
-        <option value="Hebrew">Hebrew</option>
-        <option value="Hindi">Hindi</option>
-        <option value="Hungarian">Hungarian</option>
-        <option value="Indonesian">Indonesian</option>
-        <option value="Italian">Italian</option>
-        <option value="Japanese">Japanese</option>
-        <option value="Korean">Korean</option>
-        <option value="Latvian">Latvian</option>
-        <option value="Lithuanian">Lithuanian</option>
-        <option value="Malay">Malay</option>
-        <option value="Norwegian">Norwegian</option>
-        <option value="Persian">Persian</option>
-        <option value="Polish">Polish</option>
-        <option value="Portuguese">Portuguese</option>
-        <option value="Romanian">Romanian</option>
-        <option value="Russian">Russian</option>
-        <option value="Serbian">Serbian</option>
-        <option value="Slovak">Slovak</option>
-        <option value="Slovenian">Slovenian</option>
-        <option value="Spanish">Spanish</option>
-        <option value="Swedish">Swedish</option>
-        <option value="Thai">Thai</option>
-        <option value="Turkish">Turkish</option>
-        <option value="Ukrainian">Ukrainian</option>
-        <option value="Urdu">Urdu</option>
-        <option value="Vietnamese">Vietnamese</option>
-      </select>
-    </div>
-
-    <!-- Action Buttons -->
-    <div id="action-section" class="section">
-      <button id="summarize-btn" class="btn btn-primary" disabled>
-        <span class="btn-text">Summarize Selected</span>
-      </button>
-    </div>
-
-    <!-- Loading Section -->
-    <div id="loading-section" class="section hidden">
+    <!-- Loading Card -->
+    <div id="loading-section" class="card hidden">
       <div class="loading-container">
         <div class="spinner"></div>
         <p id="loading-text">Extracting content from tabs...</p>
@@ -141,36 +146,55 @@
       </div>
     </div>
 
-    <!-- Summary Section -->
-    <div id="summary-section" class="section hidden">
-      <h2>📝 Summary</h2>
+    <!-- Summary Card -->
+    <div id="summary-section" class="card hidden">
+      <div class="summary-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Summary
+        </h2>
+        <button id="copy-summary-btn" class="btn-small" title="Copy to clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
       <div id="summary-content" class="summary-box"></div>
     </div>
 
-    <!-- Debug Console -->
-    <div id="debug-section" class="section hidden">
+    <!-- Error Card -->
+    <div id="error-section" class="card hidden">
+      <div class="error-box">
+        <span class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
+        <p id="error-message"></p>
+      </div>
+    </div>
+
+    <!-- Debug Card -->
+    <div id="debug-section" class="card hidden">
       <div class="debug-header">
-        <label>Debug Console:</label>
+        <label>Debug Console</label>
         <button id="clear-debug-btn" class="btn-small">Clear</button>
       </div>
       <div id="debug-console" class="debug-console"></div>
     </div>
 
     <!-- Debug Toggle -->
-    <div id="debug-toggle-section" class="section">
+    <div id="debug-toggle-section">
       <label class="debug-toggle-label">
         <input type="checkbox" id="debug-toggle">
         <span>Show debug console</span>
       </label>
     </div>
+  </div>
 
-    <!-- Error Section -->
-    <div id="error-section" class="section hidden">
-      <div class="error-box">
-        <span class="error-icon">⚠️</span>
-        <p id="error-message"></p>
-      </div>
-    </div>
+  <!-- Sticky Action Bar -->
+  <div class="action-bar">
+    <button id="summarize-btn" class="btn btn-primary" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span class="btn-text">Summarize Selected</span>
+    </button>
   </div>
 
   <script src="sidebar.js"></script>
