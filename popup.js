@@ -82,6 +82,21 @@ async function loadSettings() {
   if (result.summaryLanguage) {
     languageSelect.value = result.summaryLanguage;
   }
+  
+  // Update mode toggle button label
+  await updateModeToggleLabel();
+}
+
+async function updateModeToggleLabel() {
+  if (!modeToggle) return;
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'get_display_mode' });
+    const mode = response.mode || 'popup';
+    modeToggle.textContent = mode === 'sidebar' ? '📌 Popup' : '📌 Sidebar';
+    modeToggle.title = mode === 'sidebar' ? 'Switch to Popup mode' : 'Switch to Sidebar mode';
+  } catch {
+    modeToggle.textContent = '📌 Sidebar';
+  }
 }
 
 async function saveSetting(key, value) {
@@ -100,9 +115,10 @@ function setupEventListeners() {
   if (modeToggle) {
     modeToggle.addEventListener('click', async () => {
       // Switch to sidebar mode
-      await chrome.storage.local.set({ displayMode: 'sidebar' });
-      // Enable side panel
-      chrome.sidePanel.setOptions({ enabled: true, path: 'sidebar.html' });
+      await chrome.runtime.sendMessage({ action: 'set_display_mode', mode: 'sidebar' });
+      // Update label
+      modeToggle.textContent = '📌 Popup';
+      modeToggle.title = 'Switch to Popup mode';
       // Open the side panel
       chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
     });
