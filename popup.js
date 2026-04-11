@@ -15,6 +15,8 @@ const pagesSection = document.getElementById('pages-section');
 const pagesList = document.getElementById('pages-list');
 const selectAllBtn = document.getElementById('select-all-btn');
 const deselectAllBtn = document.getElementById('deselect-all-btn');
+const rlSelectAllBtn = document.getElementById('rl-select-all-btn');
+const rlDeselectAllBtn = document.getElementById('rl-deselect-all-btn');
 const languageSelect = document.getElementById('language-select');
 const summarizeBtn = document.getElementById('summarize-btn');
 const debugConsole = document.getElementById('debug-console');
@@ -27,6 +29,7 @@ const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 const summarySection = document.getElementById('summary-section');
 const summaryContent = document.getElementById('summary-content');
+const copySummaryBtn = document.getElementById('copy-summary-btn');
 const errorSection = document.getElementById('error-section');
 const errorMessage = document.getElementById('error-message');
 
@@ -92,10 +95,14 @@ async function updateModeToggleLabel() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'get_display_mode' });
     const mode = response.mode || 'popup';
-    modeToggle.textContent = mode === 'sidebar' ? '📌 Popup' : '📌 Sidebar';
+    const span = modeToggle.querySelector('span');
+    if (span) {
+      span.textContent = mode === 'sidebar' ? 'Popup' : 'Sidebar';
+    }
     modeToggle.title = mode === 'sidebar' ? 'Switch to Popup mode' : 'Switch to Sidebar mode';
   } catch {
-    modeToggle.textContent = '📌 Sidebar';
+    const span = modeToggle.querySelector('span');
+    if (span) span.textContent = 'Sidebar';
   }
 }
 
@@ -117,7 +124,10 @@ function setupEventListeners() {
       // Switch to sidebar mode
       await chrome.runtime.sendMessage({ action: 'set_display_mode', mode: 'sidebar' });
       // Update label
-      modeToggle.textContent = '📌 Popup';
+      const span = modeToggle.querySelector('span');
+      if (span) {
+        span.textContent = 'Popup';
+      }
       modeToggle.title = 'Switch to Popup mode';
       // Open the side panel
       chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
@@ -129,7 +139,10 @@ function setupEventListeners() {
   groupSelect.addEventListener('change', handleGroupSelect);
   selectAllBtn.addEventListener('click', handleSelectAll);
   deselectAllBtn.addEventListener('click', handleDeselectAll);
+  if (rlSelectAllBtn) rlSelectAllBtn.addEventListener('click', handleSelectAll);
+  if (rlDeselectAllBtn) rlDeselectAllBtn.addEventListener('click', handleDeselectAll);
   summarizeBtn.addEventListener('click', handleSummarize);
+  if (copySummaryBtn) copySummaryBtn.addEventListener('click', handleCopySummary);
   clearDebugBtn.addEventListener('click', () => { debugConsole.innerHTML = ''; debugLog('Debug console cleared'); });
   debugToggle.addEventListener('change', async () => {
     debugEnabled = debugToggle.checked;
@@ -197,9 +210,12 @@ async function loadReadingList() {
 function renderReadingList() {
   readinglistList.innerHTML = '';
   
+  // Use DocumentFragment for batch DOM insertion (performance optimization)
+  const fragment = document.createDocumentFragment();
+  
   readingListEntries.forEach((entry, index) => {
     const item = document.createElement('label');
-    item.className = 'page-item';
+    item.className = 'page-item fade-in';
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -222,9 +238,10 @@ function renderReadingList() {
     
     item.appendChild(checkbox);
     item.appendChild(text);
-    readinglistList.appendChild(item);
+    fragment.appendChild(item);
   });
   
+  readinglistList.appendChild(fragment);
   debugLog(`Rendered ${readingListEntries.length} reading list checkboxes`);
 }
 
@@ -243,13 +260,17 @@ async function checkAuthStatus() {
 
 function updateAuthUI(authenticated) {
   if (authenticated) {
-    authIcon.textContent = '✅';
+    authIcon.classList.remove('disconnected');
+    authIcon.classList.add('connected');
+    authIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
     authText.textContent = 'Connected to ChatGPT';
     connectBtn.classList.add('hidden');
     disconnectBtn.classList.remove('hidden');
     updateButtonsState();
   } else {
-    authIcon.textContent = '🔌';
+    authIcon.classList.remove('connected');
+    authIcon.classList.add('disconnected');
+    authIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
     authText.textContent = 'Not connected';
     connectBtn.classList.remove('hidden');
     disconnectBtn.classList.add('hidden');
@@ -395,9 +416,12 @@ function handleGroupSelect() {
 function renderPagesList() {
   pagesList.innerHTML = '';
   
+  // Use DocumentFragment for batch DOM insertion (performance optimization)
+  const fragment = document.createDocumentFragment();
+  
   groupTabs.forEach(tab => {
     const item = document.createElement('label');
-    item.className = 'page-item';
+    item.className = 'page-item fade-in';
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -420,9 +444,10 @@ function renderPagesList() {
     
     item.appendChild(checkbox);
     item.appendChild(text);
-    pagesList.appendChild(item);
+    fragment.appendChild(item);
   });
   
+  pagesList.appendChild(fragment);
   debugLog(`Rendered ${groupTabs.length} page checkboxes`);
 }
 
@@ -450,6 +475,23 @@ function handleDeselectAll() {
     debugLog('Deselected all reading list entries');
   }
   updateButtonsState();
+}
+
+async function handleCopySummary() {
+  const text = summaryContent.textContent;
+  if (!text) return;
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    const originalText = copySummaryBtn.innerHTML;
+    copySummaryBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+      copySummaryBtn.innerHTML = originalText;
+    }, 2000);
+    debugLog('Summary copied to clipboard');
+  } catch (error) {
+    debugLog(`Failed to copy: ${error.message}`, 'error');
+  }
 }
 
 async function handleSummarize() {
