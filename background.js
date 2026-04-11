@@ -355,7 +355,7 @@ async function startOAuthFlow() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'summarize') {
-    handleSummarizeRequest(message.contents, message.tabCount)
+    handleSummarizeRequest(message.contents, message.tabCount, message.language)
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ error: error.message }));
     return true;
@@ -387,7 +387,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Summarization Logic
 // ============================================
 
-async function handleSummarizeRequest(contents, tabCount) {
+async function handleSummarizeRequest(contents, tabCount, language = 'English') {
   try {
     const accessToken = await getAccessToken();
     if (!accessToken) {
@@ -395,8 +395,8 @@ async function handleSummarizeRequest(contents, tabCount) {
     }
 
     const userMessage = buildUserMessage(contents, tabCount);
-    const truncatedMessage = truncateMessage(userMessage, 100000);
-    const summary = await callOpenAIAPI(truncatedMessage, accessToken);
+    const truncatedMessage = truncateMessage(userMessage, 40000);
+    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language);
     
     return { text: summary, error: null };
   } catch (error) {
@@ -406,42 +406,28 @@ async function handleSummarizeRequest(contents, tabCount) {
 }
 
 function buildUserMessage(contents, tabCount) {
-  let message = `Please summarize the following content from ${tabCount} browser tabs:\n\n`;
+  const MAX_CHARS_PER_TAB = 8000;
+  let message = '';
   
   contents.forEach((content, index) => {
-    message += `--- Tab ${index + 1}: ${content.title} ---\n`;
+    const clippedContent = content.content.length > MAX_CHARS_PER_TAB
+      ? content.content.substring(0, MAX_CHARS_PER_TAB) + '\n[content clipped]'
+      : content.content;
+    message += `=== PAGE ${index + 1} ===\n`;
+    message += `Title: ${content.title}\n`;
     message += `URL: ${content.url}\n`;
-    message += `Content:\n${content.content}\n\n`;
+    message += `${clippedContent}\n\n`;
   });
   
-  message += `\nPlease provide a comprehensive summary of all the above content.`;
   return message;
 }
 
 function truncateMessage(message, maxLength) {
   if (message.length <= maxLength) return message;
-  
-  const tabSections = message.split('--- Tab ');
-  const truncated = [tabSections[0]];
-  
-  for (let i = 1; i < tabSections.length; i++) {
-    const section = '--- Tab ' + tabSections[i];
-    const remainingSpace = maxLength - truncated.join('').length - 100;
-    
-    if (remainingSpace <= 0) break;
-    
-    if (section.length <= remainingSpace) {
-      truncated.push(section);
-    } else {
-      truncated.push(section.substring(0, remainingSpace) + '\n[Content truncated]');
-      break;
-    }
-  }
-  
-  return truncated.join('');
+  return message.substring(0, maxLength) + '\n[content clipped]';
 }
 
-async function callOpenAIAPI(message, accessToken) {
+async function callOpenAIAPI(message, tabCount, accessToken, language = 'English') {
   const accountId = await getAccountId();
   console.log('[API] Using account_id:', accountId);
   
@@ -455,21 +441,53 @@ async function callOpenAIAPI(message, accessToken) {
     headers['ChatGPT-Account-ID'] = accountId;
   }
   
-  const response = await fetch(CHATGPT_API_URL, {
+  const langInstruction = `Output must be in ${language}.`;
+  const instructions = tabCount <= 1
+    ? `${langInstruction} Summarize the page content in ONE short paragraph (max 100 words). Return only the paragraph — no headings, no bullets, no extra text.`
+    : `${langInstruction} For each page section marked "=== PAGE N ===", write ONE short paragraph (max 80 words) summarizing that page. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.`;
+  
+  const body = JSON.stringify({
+    model: OPENAI_MODEL,
+    instructions: instructions,
+    input: [{
+      type: 'message',
+      role: 'user',
+      content: [{ type: 'input_text', text: message }]
+    }],
+    reasoning: { effort: 'low' },
+    store: false,
+    stream: true
+  });
+
+  let response = await fetch(CHATGPT_API_URL, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      instructions: 'You are a helpful assistant that summarizes web page content.',
-      input: [{
-        type: 'message',
-        role: 'user',
-        content: [{ type: 'input_text', text: message }]
-      }],
-      store: false,
-      stream: true
-    })
+    body
   });
+
+  // If reasoning is rejected, retry without it
+  if (!response.ok) {
+    const errText = await response.text();
+    if (response.status === 400 && errText.includes('Unsupported parameter')) {
+      console.log('[API] Retrying without optional params...');
+      const fallbackBody = JSON.stringify({
+        model: OPENAI_MODEL,
+        instructions: instructions,
+        input: [{
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text: message }]
+        }],
+        store: false,
+        stream: true
+      });
+      response = await fetch(CHATGPT_API_URL, {
+        method: 'POST',
+        headers,
+        body: fallbackBody
+      });
+    }
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -529,6 +547,7 @@ async function parseSSEStream(body) {
   let buffer = '';
   let fullText = '';
   let completed = false;
+  let receivedDeltas = false;
   
   try {
     while (true) {
@@ -551,11 +570,15 @@ async function parseSSEStream(body) {
             
             if (eventType === 'response.output_text.delta' && event.delta) {
               fullText += event.delta;
+              receivedDeltas = true;
             } else if (eventType === 'response.output_item.done') {
-              const item = event.item;
-              if (item && item.content) {
-                for (const c of item.content) {
-                  if (c.text) fullText += c.text;
+              // Only use output_item.done text if we didn't receive deltas
+              if (!receivedDeltas) {
+                const item = event.item;
+                if (item && item.content) {
+                  for (const c of item.content) {
+                    if (c.text) fullText += c.text;
+                  }
                 }
               }
             } else if (eventType === 'response.completed') {
@@ -588,6 +611,7 @@ function parseSSEText(text) {
   const lines = text.split('\n');
   let fullText = '';
   let completed = false;
+  let receivedDeltas = false;
   
   for (const line of lines) {
     const trimmed = line.trim();
@@ -601,11 +625,15 @@ function parseSSEText(text) {
         
         if (eventType === 'response.output_text.delta' && event.delta) {
           fullText += event.delta;
+          receivedDeltas = true;
         } else if (eventType === 'response.output_item.done') {
-          const item = event.item;
-          if (item && item.content) {
-            for (const c of item.content) {
-              if (c.text) fullText += c.text;
+          // Only use output_item.done text if we didn't receive deltas
+          if (!receivedDeltas) {
+            const item = event.item;
+            if (item && item.content) {
+              for (const c of item.content) {
+                if (c.text) fullText += c.text;
+              }
             }
           }
         } else if (eventType === 'response.completed') {

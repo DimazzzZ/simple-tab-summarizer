@@ -9,9 +9,11 @@ const pagesSection = document.getElementById('pages-section');
 const pagesList = document.getElementById('pages-list');
 const selectAllBtn = document.getElementById('select-all-btn');
 const deselectAllBtn = document.getElementById('deselect-all-btn');
+const languageSelect = document.getElementById('language-select');
 const summarizeBtn = document.getElementById('summarize-btn');
-const closeGroupBtn = document.getElementById('close-group-btn');
 const debugConsole = document.getElementById('debug-console');
+const debugSection = document.getElementById('debug-section');
+const debugToggle = document.getElementById('debug-toggle');
 const clearDebugBtn = document.getElementById('clear-debug-btn');
 const loadingSection = document.getElementById('loading-section');
 const loadingText = document.getElementById('loading-text');
@@ -28,6 +30,7 @@ let groupTabs = [];
 let selectedTabIds = new Set();
 let isAuthenticated = false;
 let allGroups = [];
+let debugEnabled = false;
 
 // Debug logging
 function debugLog(message, type = 'info') {
@@ -35,8 +38,10 @@ function debugLog(message, type = 'info') {
   const entry = document.createElement('div');
   entry.className = `debug-entry debug-${type}`;
   entry.textContent = `[${timestamp}] ${message}`;
-  debugConsole.appendChild(entry);
-  debugConsole.scrollTop = debugConsole.scrollHeight;
+  if (debugEnabled && debugConsole) {
+    debugConsole.appendChild(entry);
+    debugConsole.scrollTop = debugConsole.scrollHeight;
+  }
   console.log(`[TabGroupSummarizer] ${message}`);
 }
 
@@ -53,10 +58,34 @@ function executeScriptWithTimeout(tabId, files, timeoutMs = 30000) {
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
   debugLog('Popup initialized');
+  await loadSettings();
   await checkAuthStatus();
   await loadTabGroups();
   setupEventListeners();
 });
+
+async function loadSettings() {
+  const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage']);
+  debugEnabled = result.debugEnabled || false;
+  debugToggle.checked = debugEnabled;
+  updateDebugVisibility();
+  
+  if (result.summaryLanguage) {
+    languageSelect.value = result.summaryLanguage;
+  }
+}
+
+async function saveSetting(key, value) {
+  await chrome.storage.local.set({ [key]: value });
+}
+
+function updateDebugVisibility() {
+  if (debugEnabled) {
+    debugSection.classList.remove('hidden');
+  } else {
+    debugSection.classList.add('hidden');
+  }
+}
 
 function setupEventListeners() {
   connectBtn.addEventListener('click', handleConnect);
@@ -65,8 +94,17 @@ function setupEventListeners() {
   selectAllBtn.addEventListener('click', handleSelectAll);
   deselectAllBtn.addEventListener('click', handleDeselectAll);
   summarizeBtn.addEventListener('click', handleSummarize);
-  closeGroupBtn.addEventListener('click', handleCloseGroup);
   clearDebugBtn.addEventListener('click', () => { debugConsole.innerHTML = ''; debugLog('Debug console cleared'); });
+  debugToggle.addEventListener('change', async () => {
+    debugEnabled = debugToggle.checked;
+    await saveSetting('debugEnabled', debugEnabled);
+    updateDebugVisibility();
+    debugLog(`Debug console ${debugEnabled ? 'enabled' : 'disabled'}`);
+  });
+  languageSelect.addEventListener('change', async () => {
+    await saveSetting('summaryLanguage', languageSelect.value);
+    debugLog(`Summary language changed to: ${languageSelect.value}`);
+  });
 }
 
 async function checkAuthStatus() {
@@ -95,15 +133,13 @@ function updateAuthUI(authenticated) {
     connectBtn.classList.remove('hidden');
     disconnectBtn.classList.add('hidden');
     summarizeBtn.disabled = true;
-    closeGroupBtn.disabled = true;
   }
 }
 
 function updateButtonsState() {
   const hasSelection = selectedTabIds.size > 0;
   summarizeBtn.disabled = !isAuthenticated || !hasSelection;
-  closeGroupBtn.disabled = !selectedGroupId;
-  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Close: ${!closeGroupBtn.disabled}, Selected tabs: ${selectedTabIds.size}`);
+  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Selected tabs: ${selectedTabIds.size}`);
 }
 
 async function handleConnect() {
@@ -151,7 +187,6 @@ async function handleDisconnect() {
     updateAuthUI(false);
     hideError();
     hideSummary();
-    closeGroupBtn.disabled = true;
     debugLog('Disconnected from ChatGPT');
   } catch (error) {
     debugLog(`Disconnect error: ${error.message}`, 'error');
@@ -291,7 +326,8 @@ async function handleSummarize() {
   }
 
   const selectedTabs = groupTabs.filter(t => selectedTabIds.has(t.id));
-  debugLog(`Starting summarization for ${selectedTabs.length} tabs`);
+  const summaryLanguage = languageSelect.value || 'English';
+  debugLog(`Starting summarization for ${selectedTabs.length} tabs in ${summaryLanguage}`);
 
   showLoading();
   hideError();
@@ -308,7 +344,8 @@ async function handleSummarize() {
     const summary = await chrome.runtime.sendMessage({
       action: 'summarize',
       contents: tabContents,
-      tabCount: tabContents.length
+      tabCount: tabContents.length,
+      language: summaryLanguage
     });
 
     if (summary.error) {
@@ -317,7 +354,6 @@ async function handleSummarize() {
     } else {
       debugLog('Successfully received summary from AI');
       showSummary(summary.text);
-      closeGroupBtn.disabled = false;
     }
   } catch (error) {
     debugLog(`Error during summarization: ${error.message}`, 'error');
@@ -328,114 +364,82 @@ async function handleSummarize() {
   }
 }
 
-  async function extractTabContents(tabs) {
-    const contents = [];
-    const totalTabs = tabs.length;
+async function extractTabContents(tabs) {
+  const contents = [];
+  const totalTabs = tabs.length;
 
-    for (let i = 0; i < totalTabs; i++) {
-      const tab = tabs[i];
-      updateProgress(i + 1, totalTabs);
-      loadingText.textContent = `Extracting content from tab ${i + 1}/${totalTabs}...`;
-      debugLog(`Extracting tab ${i + 1}/${totalTabs}: ${tab.title || 'Untitled'} (ID: ${tab.id})`);
-      debugLog(`Tab URL: ${tab.url || 'N/A'}`);
-      debugLog(`Tab status: ${tab.status || 'unknown'}, discarded: ${tab.discarded || false}`);
+  for (let i = 0; i < totalTabs; i++) {
+    const tab = tabs[i];
+    updateProgress(i + 1, totalTabs);
+    loadingText.textContent = `Extracting content from tab ${i + 1}/${totalTabs}...`;
+    debugLog(`Extracting tab ${i + 1}/${totalTabs}: ${tab.title || 'Untitled'} (ID: ${tab.id})`);
+    debugLog(`Tab URL: ${tab.url || 'N/A'}`);
+    debugLog(`Tab status: ${tab.status || 'unknown'}, discarded: ${tab.discarded || false}`);
 
-      try {
-        if (isRestrictedUrl(tab.url)) {
-          debugLog(`Tab ${i + 1} is restricted: ${tab.url}`, 'warn');
-          contents.push({ title: tab.title, url: tab.url, content: '[Restricted page]' });
-          continue;
-        }
+    try {
+      if (isRestrictedUrl(tab.url)) {
+        debugLog(`Tab ${i + 1} is restricted: ${tab.url}`, 'warn');
+        contents.push({ title: tab.title, url: tab.url, content: '[Restricted page]' });
+        continue;
+      }
 
-        // If tab is unloaded/discarded, reload it and wait for it to be ready
-        let currentTab = tab;
-        if (tab.status === 'unloaded' || tab.discarded) {
-          debugLog(`Tab ${tab.id} is unloaded/discarded, reloading...`);
-          await chrome.tabs.reload(tab.id);
-          currentTab = await waitForTabReady(tab.id);
-          debugLog(`Tab ${tab.id} reloaded, status: ${currentTab.status}`);
-        }
+      // If tab is unloaded/discarded, reload it and wait for it to be ready
+      let currentTab = tab;
+      if (tab.status === 'unloaded' || tab.discarded) {
+        debugLog(`Tab ${tab.id} is unloaded/discarded, reloading...`);
+        await chrome.tabs.reload(tab.id);
+        currentTab = await waitForTabReady(tab.id);
+        debugLog(`Tab ${tab.id} reloaded, status: ${currentTab.status}`);
+      }
 
-        debugLog(`Injecting content.js into tab ${currentTab.id}...`);
-        const results = await executeScriptWithTimeout(currentTab.id, ['content.js'], 15000);
-        debugLog(`Script injection completed for tab ${currentTab.id}`);
+      debugLog(`Injecting content.js into tab ${currentTab.id}...`);
+      const results = await executeScriptWithTimeout(currentTab.id, ['content.js'], 15000);
+      debugLog(`Script injection completed for tab ${currentTab.id}`);
 
-        if (results && results[0] && results[0].result) {
-          const contentLength = results[0].result.length;
-          debugLog(`Tab ${i + 1} extracted: ${contentLength} characters`);
-          contents.push({ title: currentTab.title, url: currentTab.url, content: results[0].result });
-        } else {
-          debugLog(`Tab ${i + 1} returned no content`, 'warn');
-          contents.push({ title: currentTab.title, url: currentTab.url, content: '[No content extracted]' });
-        }
-      } catch (error) {
-        debugLog(`Error extracting tab ${i + 1}: ${error.message}`, 'error');
-        let errorMsg = `[Error: ${error.message}]`;
-        if (error.message.includes('Cannot access contents')) {
-          errorMsg = '[Access denied: Chrome blocked this page. Enable "On all sites" in extension Site Access settings.]';
-        }
-        contents.push({ title: tab.title, url: tab.url, content: errorMsg });
+      if (results && results[0] && results[0].result) {
+        const contentLength = results[0].result.length;
+        debugLog(`Tab ${i + 1} extracted: ${contentLength} characters`);
+        contents.push({ title: currentTab.title, url: currentTab.url, content: results[0].result });
+      } else {
+        debugLog(`Tab ${i + 1} returned no content`, 'warn');
+        contents.push({ title: currentTab.title, url: currentTab.url, content: '[No content extracted]' });
+      }
+    } catch (error) {
+      debugLog(`Error extracting tab ${i + 1}: ${error.message}`, 'error');
+      let errorMsg = `[Error: ${error.message}]`;
+      if (error.message.includes('Cannot access contents')) {
+        errorMsg = '[Access denied: Chrome blocked this page. Enable "On all sites" in extension Site Access settings.]';
+      }
+      contents.push({ title: tab.title, url: tab.url, content: errorMsg });
+    }
+  }
+
+  return contents;
+}
+
+function waitForTabReady(tabId, timeout = 30000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(listener);
+      chrome.tabs.get(tabId).then(resolve).catch(reject);
+    }, timeout);
+
+    function listener(updatedTabId, changeInfo, tab) {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        clearTimeout(timer);
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve(tab);
       }
     }
 
-    return contents;
-  }
-
-  function waitForTabReady(tabId, timeout = 30000) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        chrome.tabs.onUpdated.removeListener(listener);
-        chrome.tabs.get(tabId).then(resolve).catch(reject);
-      }, timeout);
-
-      function listener(updatedTabId, changeInfo, tab) {
-        if (updatedTabId === tabId && changeInfo.status === 'complete') {
-          clearTimeout(timer);
-          chrome.tabs.onUpdated.removeListener(listener);
-          resolve(tab);
-        }
-      }
-
-      chrome.tabs.onUpdated.addListener(listener);
-    });
-  }
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
 
 function updateProgress(current, total) {
   const percentage = (current / total) * 100;
   progressFill.style.width = `${percentage}%`;
   progressText.textContent = `${current} / ${total} tabs processed`;
-}
-
-async function handleCloseGroup() {
-  if (!selectedGroupId) {
-    showError('No tab group selected.');
-    return;
-  }
-
-  const confirmed = confirm(`Are you sure you want to close all ${groupTabs.length} tabs in this group?`);
-  if (!confirmed) return;
-
-  debugLog(`Closing ${groupTabs.length} tabs in group ${selectedGroupId}`);
-
-  try {
-    const tabs = await chrome.tabs.query({ groupId: selectedGroupId });
-    const tabIds = tabs.map(tab => tab.id);
-    if (tabIds.length > 0) {
-      await chrome.tabs.remove(tabIds);
-      debugLog(`Closed ${tabIds.length} tabs`);
-    }
-    await loadTabGroups();
-    selectedGroupId = null;
-    groupTabs = [];
-    selectedTabIds.clear();
-    pagesSection.classList.add('hidden');
-    updateButtonsState();
-    hideSummary();
-    hideError();
-  } catch (error) {
-    debugLog(`Error closing tabs: ${error.message}`, 'error');
-    showError('Failed to close tabs. Please try again.');
-  }
 }
 
 function showLoading() {

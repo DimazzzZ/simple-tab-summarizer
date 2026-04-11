@@ -49,23 +49,59 @@
       <div id="pages-list" class="pages-list"></div>
     </div>
 
+    <!-- Language Selection -->
+    <div id="language-section" class="section">
+      <label for="language-select">Summary Language:</label>
+      <select id="language-select" class="language-select">
+        <option value="Arabic">Arabic</option>
+        <option value="Bengali">Bengali</option>
+        <option value="Bulgarian">Bulgarian</option>
+        <option value="Catalan">Catalan</option>
+        <option value="Chinese">Chinese</option>
+        <option value="Croatian">Croatian</option>
+        <option value="Czech">Czech</option>
+        <option value="Danish">Danish</option>
+        <option value="Dutch">Dutch</option>
+        <option value="English" selected>English</option>
+        <option value="Estonian">Estonian</option>
+        <option value="Finnish">Finnish</option>
+        <option value="French">French</option>
+        <option value="German">German</option>
+        <option value="Greek">Greek</option>
+        <option value="Hebrew">Hebrew</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Hungarian">Hungarian</option>
+        <option value="Indonesian">Indonesian</option>
+        <option value="Italian">Italian</option>
+        <option value="Japanese">Japanese</option>
+        <option value="Korean">Korean</option>
+        <option value="Latvian">Latvian</option>
+        <option value="Lithuanian">Lithuanian</option>
+        <option value="Malay">Malay</option>
+        <option value="Norwegian">Norwegian</option>
+        <option value="Persian">Persian</option>
+        <option value="Polish">Polish</option>
+        <option value="Portuguese">Portuguese</option>
+        <option value="Romanian">Romanian</option>
+        <option value="Russian">Russian</option>
+        <option value="Serbian">Serbian</option>
+        <option value="Slovak">Slovak</option>
+        <option value="Slovenian">Slovenian</option>
+        <option value="Spanish">Spanish</option>
+        <option value="Swedish">Swedish</option>
+        <option value="Thai">Thai</option>
+        <option value="Turkish">Turkish</option>
+        <option value="Ukrainian">Ukrainian</option>
+        <option value="Urdu">Urdu</option>
+        <option value="Vietnamese">Vietnamese</option>
+      </select>
+    </div>
+
     <!-- Action Buttons -->
     <div id="action-section" class="section">
       <button id="summarize-btn" class="btn btn-primary" disabled>
         <span class="btn-text">Summarize Selected</span>
       </button>
-      <button id="close-group-btn" class="btn btn-danger" disabled>
-        <span class="btn-text">Done & Close Group</span>
-      </button>
-    </div>
-
-    <!-- Debug Console -->
-    <div id="debug-section" class="section">
-      <div class="debug-header">
-        <label>Debug Console:</label>
-        <button id="clear-debug-btn" class="btn-small">Clear</button>
-      </div>
-      <div id="debug-console" class="debug-console"></div>
     </div>
 
     <!-- Loading Section -->
@@ -84,6 +120,23 @@
     <div id="summary-section" class="section hidden">
       <h2>📝 Summary</h2>
       <div id="summary-content" class="summary-box"></div>
+    </div>
+
+    <!-- Debug Console -->
+    <div id="debug-section" class="section hidden">
+      <div class="debug-header">
+        <label>Debug Console:</label>
+        <button id="clear-debug-btn" class="btn-small">Clear</button>
+      </div>
+      <div id="debug-console" class="debug-console"></div>
+    </div>
+
+    <!-- Debug Toggle -->
+    <div id="debug-toggle-section" class="section">
+      <label class="debug-toggle-label">
+        <input type="checkbox" id="debug-toggle">
+        <span>Show debug console</span>
+      </label>
     </div>
 
     <!-- Error Section -->
