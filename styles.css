@@ -18,11 +18,47 @@ body {
 }
 
 /* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 header h1 {
   font-size: 18px;
   font-weight: 600;
   color: #1a1a2e;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+}
+
+/* Mode Toggle Button */
+.mode-toggle {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #4a4a68;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mode-toggle:hover {
+  background: #f0f0f0;
+  border-color: #0066cc;
+}
+
+/* Sidebar mode adjustments */
+body.sidebar-mode {
+  width: 100%;
+  min-height: 100vh;
+}
+
+body.sidebar-mode .container {
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 /* Sections */
