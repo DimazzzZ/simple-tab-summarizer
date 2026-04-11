@@ -55,6 +55,31 @@ header h1 {
   color: #4a4a68;
 }
 
+/* Source Selection */
+#source-section label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a4a68;
+  margin-bottom: 6px;
+}
+
+.source-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.source-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
 /* Group Selection & Language Selection */
 #group-section label,
 #language-section label {

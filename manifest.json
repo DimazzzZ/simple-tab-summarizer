@@ -8,7 +8,8 @@
     "tabs",
     "scripting",
     "storage",
-    "webNavigation"
+    "webNavigation",
+    "readingList"
   ],
   "host_permissions": [
     "<all_urls>",
