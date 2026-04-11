@@ -1,3 +1,6 @@
+// Sidebar mode - reuses popup.js logic with sidebar-specific behavior
+// The mode toggle preference is shared via chrome.storage.local
+
 // DOM Elements
 const modeToggle = document.getElementById('mode-toggle');
 const authIcon = document.getElementById('auth-icon');
@@ -64,9 +67,9 @@ function executeScriptWithTimeout(tabId, files, timeoutMs = 30000) {
   ]);
 }
 
-// Initialize popup
+// Initialize sidebar
 document.addEventListener('DOMContentLoaded', async () => {
-  debugLog('Popup initialized');
+  debugLog('Sidebar initialized');
   await loadSettings();
   await checkAuthStatus();
   await loadTabGroups();
@@ -99,12 +102,12 @@ function updateDebugVisibility() {
 function setupEventListeners() {
   if (modeToggle) {
     modeToggle.addEventListener('click', async () => {
-      // Switch to sidebar mode
-      await chrome.storage.local.set({ displayMode: 'sidebar' });
-      // Enable side panel
+      // Switch to popup mode
+      await chrome.storage.local.set({ displayMode: 'popup' });
+      // Disable side panel so next click opens popup
+      chrome.sidePanel.setOptions({ enabled: false });
+      // Re-enable with popup as default
       chrome.sidePanel.setOptions({ enabled: true, path: 'sidebar.html' });
-      // Open the side panel
-      chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
     });
   }
   connectBtn.addEventListener('click', handleConnect);
@@ -518,7 +521,6 @@ async function extractTabContents(tabs) {
         continue;
       }
 
-      // If tab is unloaded/discarded, reload it and wait for it to be ready
       let currentTab = tab;
       if (tab.status === 'unloaded' || tab.discarded) {
         debugLog(`Tab ${tab.id} is unloaded/discarded, reloading...`);
@@ -608,20 +610,16 @@ async function extractReadingListContents() {
         continue;
       }
 
-      // Open URL in a background tab
       debugLog(`Opening ${entry.url} in background tab...`);
       const tempTab = await chrome.tabs.create({ url: entry.url, active: false });
       
-      // Wait for tab to be ready
       const readyTab = await waitForTabReady(tempTab.id, 15000);
       debugLog(`Tab ${readyTab.id} ready, status: ${readyTab.status}`);
 
-      // Inject content script
       debugLog(`Injecting content.js into tab ${readyTab.id}...`);
       const results = await executeScriptWithTimeout(readyTab.id, ['content.js'], 15000);
       debugLog(`Script injection completed for tab ${readyTab.id}`);
 
-      // Close the temp tab
       try { await chrome.tabs.remove(readyTab.id); } catch {}
       debugLog(`Closed temp tab ${readyTab.id}`);
 
