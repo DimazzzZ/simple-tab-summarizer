@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Tab Group Summarizer",
-  "description": "Summarize all tabs in a tab group using AI",
+  "name": "Simple Tab Summarizer",
+  "description": "Free AI summarizer for tabs, tab groups, and reading lists",
   "version": "1.0.0",
   "permissions": [
     "tabGroups",
