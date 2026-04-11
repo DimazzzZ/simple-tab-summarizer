@@ -1,24 +1,25 @@
 /**
  * Background Service Worker for Tab Group Summarizer
  * 
- * Uses OpenAI Codex OAuth PKCE flow (like Cline).
- * Opens auth.openai.com for sign-in, intercepts callback, exchanges code for tokens.
+ * Uses OpenAI Codex OAuth PKCE flow.
+ * Opens auth.openai.com for sign-in, intercepts localhost callback, exchanges code for tokens.
+ * Uses the access_token with the ChatGPT Codex backend (chatgpt.com/backend-api/codex/responses).
+ * Includes ChatGPT-Account-ID header when authenticated via ChatGPT OAuth.
  */
 
 // ============================================
 // Configuration
 // ============================================
 
-const CHATGPT_API_URL = 'https://chatgpt.com/backend-api/conversation';
-const CHATGPT_MODEL = 'gpt-4o';
+const CHATGPT_API_URL = 'https://chatgpt.com/backend-api/codex/responses';
+const OPENAI_MODEL = 'gpt-5.4';
 
 const OAUTH_CONFIG = {
   authorizationEndpoint: 'https://auth.openai.com/oauth/authorize',
   tokenEndpoint: 'https://auth.openai.com/oauth/token',
   clientId: 'app_EMoamEEZ73f0CkXaXp7hrann',
   redirectUri: 'http://localhost:1455/auth/callback',
-  scopes: 'openid profile email offline_access',
-  callbackPort: 1455
+  scopes: 'openid profile email offline_access api.connectors.read api.connectors.invoke'
 };
 
 // ============================================
@@ -50,15 +51,15 @@ function generateState() {
 
 function buildAuthorizationUrl(codeChallenge, state) {
   const params = new URLSearchParams({
-    response_type: 'code',
     client_id: OAUTH_CONFIG.clientId,
     redirect_uri: OAUTH_CONFIG.redirectUri,
     scope: OAUTH_CONFIG.scopes,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
+    response_type: 'code',
     state: state,
     codex_cli_simplified_flow: 'true',
-    originator: 'tab-group-summarizer'
+    originator: 'cline'
   });
   return `${OAUTH_CONFIG.authorizationEndpoint}?${params.toString()}`;
 }
@@ -82,12 +83,11 @@ async function clearCredentials() {
 
 async function getAccessToken() {
   const creds = await getStoredCredentials();
-  if (!creds) return null;
+  if (!creds || !creds.access_token) return null;
   
   // Check if token is expired (with 5 min buffer)
   const now = Date.now();
   if (creds.expires_at && creds.expires_at - now < 5 * 60 * 1000) {
-    // Try to refresh
     if (creds.refresh_token) {
       const refreshed = await refreshAccessToken(creds.refresh_token);
       if (refreshed) {
@@ -100,16 +100,26 @@ async function getAccessToken() {
   return creds.access_token;
 }
 
+/**
+ * Get the stored account_id (ChatGPT-Account-ID header value).
+ */
+async function getAccountId() {
+  const creds = await getStoredCredentials();
+  return creds?.account_id || null;
+}
+
 async function refreshAccessToken(refreshToken) {
   try {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: OAUTH_CONFIG.clientId
+    });
+
     const response = await fetch(OAUTH_CONFIG.tokenEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: OAUTH_CONFIG.clientId
-      })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
     });
     
     if (!response.ok) {
@@ -118,10 +128,13 @@ async function refreshAccessToken(refreshToken) {
     }
     
     const data = await response.json();
+    const existingCreds = await getStoredCredentials();
     const creds = {
       access_token: data.access_token,
       refresh_token: data.refresh_token || refreshToken,
-      expires_at: Date.now() + (data.expires_in * 1000)
+      expires_at: Date.now() + (data.expires_in * 1000),
+      // Preserve account_id from original auth
+      account_id: existingCreds?.account_id || null
     };
     
     await storeCredentials(creds);
@@ -132,38 +145,89 @@ async function refreshAccessToken(refreshToken) {
   }
 }
 
-async function exchangeCodeForTokens(code, codeVerifier) {
+/**
+ * Decode a JWT payload (without verification) to extract claims.
+ * Returns null if the token cannot be decoded.
+ */
+function decodeJwtPayload(token) {
   try {
-    const response = await fetch(OAUTH_CONFIG.tokenEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'authorization_code',
-        code: code,
-        code_verifier: codeVerifier,
-        client_id: OAUTH_CONFIG.clientId,
-        redirect_uri: OAUTH_CONFIG.redirectUri
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
-    const creds = {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token || '',
-      expires_at: Date.now() + (data.expires_in * 1000)
-    };
-    
-    await storeCredentials(creds);
-    return creds;
-  } catch (e) {
-    console.error('Token exchange error:', e);
-    throw e;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    // Add padding if needed
+    const padded = payload.padEnd(payload.length + (4 - payload.length % 4) % 4, '=');
+    const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch {
+    return null;
   }
+}
+
+/**
+ * Extract the ChatGPT account ID from the id_token JWT.
+ * The id_token contains claims at https://api.openai.com/auth.chatgpt_account_id
+ */
+function extractAccountIdFromIdToken(idToken) {
+  const claims = decodeJwtPayload(idToken);
+  if (!claims) return null;
+  
+  // Try the nested claim path first
+  const authClaims = claims['https://api.openai.com/auth'];
+  if (authClaims?.chatgpt_account_id) {
+    return authClaims.chatgpt_account_id;
+  }
+  
+  // Try flat claim
+  if (claims.chatgpt_account_id) {
+    return claims.chatgpt_account_id;
+  }
+  
+  // Try sub claim
+  if (claims.sub) {
+    return claims.sub;
+  }
+  
+  return null;
+}
+
+async function exchangeCodeForTokens(code, codeVerifier) {
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: OAUTH_CONFIG.clientId,
+    code: code,
+    redirect_uri: OAUTH_CONFIG.redirectUri,
+    code_verifier: codeVerifier
+  });
+
+  const response = await fetch(OAUTH_CONFIG.tokenEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString()
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
+  }
+  
+  const data = await response.json();
+  console.log('[OAuth] Token response keys:', Object.keys(data));
+  if (data.scope) console.log('[OAuth] Granted scopes:', data.scope);
+  
+  // Extract account_id from id_token if present
+  const accountId = data.id_token ? extractAccountIdFromIdToken(data.id_token) : null;
+  console.log('[OAuth] Extracted account_id:', accountId);
+  
+  const creds = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || '',
+    expires_at: Date.now() + (data.expires_in * 1000),
+    account_id: accountId
+  };
+  
+  await storeCredentials(creds);
+  console.log('[OAuth] Tokens stored! access_token present:', !!creds.access_token, 'account_id present:', !!creds.account_id);
+  return creds;
 }
 
 // ============================================
@@ -172,10 +236,94 @@ async function exchangeCodeForTokens(code, codeVerifier) {
 
 let pendingAuth = null;
 
+async function savePendingAuth() {
+  if (pendingAuth) {
+    await chrome.storage.local.set({ pending_auth: {
+      codeVerifier: pendingAuth.codeVerifier,
+      state: pendingAuth.state,
+      cancelled: pendingAuth.cancelled,
+      tabId: pendingAuth.tabId
+    }});
+  }
+}
+
+async function loadPendingAuth() {
+  const result = await chrome.storage.local.get('pending_auth');
+  return result.pending_auth || null;
+}
+
+async function clearPendingAuth() {
+  await chrome.storage.local.remove('pending_auth');
+}
+
+// Restore pending auth from storage on service worker startup
+(async function init() {
+  pendingAuth = await loadPendingAuth();
+  if (pendingAuth) {
+    console.log('[OAuth] Restored pending auth from storage');
+  }
+})();
+
+// Listen for tab updates globally to catch callback even if popup closed
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (!changeInfo.url || !changeInfo.url.includes('localhost:1455/auth/callback')) return;
+  
+  // Check if we have pending auth
+  if (!pendingAuth) {
+    pendingAuth = await loadPendingAuth();
+  }
+  if (!pendingAuth || pendingAuth.cancelled) return;
+  
+  console.log('[OAuth] Global listener caught callback!');
+  
+  const url = new URL(changeInfo.url);
+  const code = url.searchParams.get('code');
+  const returnedState = url.searchParams.get('state');
+  const error = url.searchParams.get('error');
+  
+  // Close the tab
+  try { await chrome.tabs.remove(tabId); } catch {}
+  
+  if (error) {
+    console.error('[OAuth] Auth error:', error);
+    await clearPendingAuth();
+    pendingAuth = null;
+    return;
+  }
+  
+  if (!code || !returnedState) {
+    console.error('[OAuth] Missing code or state');
+    await clearPendingAuth();
+    pendingAuth = null;
+    return;
+  }
+  
+  if (returnedState !== pendingAuth.state) {
+    console.error('[OAuth] State mismatch');
+    await clearPendingAuth();
+    pendingAuth = null;
+    return;
+  }
+  
+  try {
+    console.log('[OAuth] Exchanging code for tokens...');
+    const creds = await exchangeCodeForTokens(code, pendingAuth.codeVerifier);
+    console.log('[OAuth] Tokens stored!');
+    await clearPendingAuth();
+    pendingAuth = null;
+  } catch (e) {
+    console.error('[OAuth] Token exchange error:', e);
+    await clearPendingAuth();
+    pendingAuth = null;
+  }
+});
+
 async function startOAuthFlow() {
-  // Cancel any existing flow
   if (pendingAuth) {
     pendingAuth.cancelled = true;
+    if (pendingAuth.tabId) {
+      try { await chrome.tabs.remove(pendingAuth.tabId); } catch {}
+    }
   }
   
   const codeVerifier = generateCodeVerifier();
@@ -189,103 +337,16 @@ async function startOAuthFlow() {
     tabId: null
   };
   
-  const authUrl = buildAuthorizationUrl(codeChallenge, state);
+  await savePendingAuth();
   
-  // Open auth tab
+  const authUrl = buildAuthorizationUrl(codeChallenge, state);
+  console.log('[OAuth] Opening auth URL:', authUrl);
   const tab = await chrome.tabs.create({ url: authUrl, active: true });
   pendingAuth.tabId = tab.id;
+  await savePendingAuth();
   
-  // Set up listener for callback
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Authentication timed out. Please try again.'));
-    }, 5 * 60 * 1000); // 5 minutes
-    
-    function cleanup() {
-      clearTimeout(timeout);
-      chrome.tabs.onUpdated.removeListener(onTabUpdated);
-      chrome.tabs.onRemoved.removeListener(onTabRemoved);
-      if (pendingAuth && !pendingAuth.cancelled) {
-        pendingAuth = null;
-      }
-    }
-    
-    async function onTabUpdated(tabId, changeInfo, tab) {
-      if (tabId !== pendingAuth?.tabId || pendingAuth.cancelled) return;
-      
-      if (changeInfo.url) {
-        const url = new URL(changeInfo.url);
-        
-        // Check if this is the callback
-        if (url.hostname === 'localhost' && url.port === String(OAUTH_CONFIG.callbackPort) && url.pathname === '/auth/callback') {
-          const code = url.searchParams.get('code');
-          const returnedState = url.searchParams.get('state');
-          const error = url.searchParams.get('error');
-          
-          if (error) {
-            cleanup();
-            reject(new Error(`Authentication failed: ${error}`));
-            return;
-          }
-          
-          if (!code || !returnedState) {
-            cleanup();
-            reject(new Error('Missing code or state parameter'));
-            return;
-          }
-          
-          if (returnedState !== pendingAuth.state) {
-            cleanup();
-            reject(new Error('State mismatch - possible CSRF attack'));
-            return;
-          }
-          
-          try {
-            // Exchange code for tokens
-            const creds = await exchangeCodeForTokens(code, pendingAuth.codeVerifier);
-            
-            // Show success page
-            await chrome.tabs.update(tabId, {
-              url: 'data:text/html,' + encodeURIComponent(`
-                <!DOCTYPE html>
-                <html>
-                <head><title>Authentication Successful</title>
-                <style>
-                  body { font-family: system-ui; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #1a1a2e; color: #fff; }
-                  .container { text-align: center; padding: 48px; }
-                  .icon { width: 72px; height: 72px; margin: 0 auto 24px; background: linear-gradient(135deg, #10a37f, #1a7f64); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-                  h1 { font-size: 24px; margin-bottom: 12px; }
-                  p { color: rgba(255,255,255,0.7); }
-                </style></head>
-                <body><div class="container">
-                  <div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                  <h1>Authentication Successful</h1>
-                  <p>You're now signed in. You can close this tab.</p>
-                </div></body></html>
-              `)
-            });
-            
-            cleanup();
-            resolve({ success: true, message: 'Connected!' });
-          } catch (e) {
-            cleanup();
-            reject(e);
-          }
-        }
-      }
-    }
-    
-    function onTabRemoved(tabId) {
-      if (tabId === pendingAuth?.tabId && !pendingAuth.cancelled) {
-        cleanup();
-        reject(new Error('Authentication cancelled'));
-      }
-    }
-    
-    chrome.tabs.onUpdated.addListener(onTabUpdated);
-    chrome.tabs.onRemoved.addListener(onTabRemoved);
-  });
+  // Return immediately - the global listener will handle the callback
+  return { success: true, message: 'Auth window opened. Please sign in, then reopen the extension to check status.' };
 }
 
 // ============================================
@@ -328,14 +389,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleSummarizeRequest(contents, tabCount) {
   try {
-    const token = await getAccessToken();
-    if (!token) {
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
       return { text: null, error: 'Not connected. Please connect to ChatGPT first.' };
     }
 
     const userMessage = buildUserMessage(contents, tabCount);
     const truncatedMessage = truncateMessage(userMessage, 100000);
-    const summary = await callAPI(truncatedMessage, token);
+    const summary = await callOpenAIAPI(truncatedMessage, accessToken);
     
     return { text: summary, error: null };
   } catch (error) {
@@ -380,57 +441,189 @@ function truncateMessage(message, maxLength) {
   return truncated.join('');
 }
 
-async function callAPI(message, token) {
+async function callOpenAIAPI(message, accessToken) {
+  const accountId = await getAccountId();
+  console.log('[API] Using account_id:', accountId);
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`
+  };
+  
+  // Add ChatGPT-Account-ID header if we have it
+  if (accountId) {
+    headers['ChatGPT-Account-ID'] = accountId;
+  }
+  
   const response = await fetch(CHATGPT_API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'Origin': 'https://chatgpt.com',
-      'Referer': 'https://chatgpt.com/'
-    },
+    headers,
     body: JSON.stringify({
-      action: 'next',
-      messages: [
-        {
-          id: crypto.randomUUID(),
-          author: { role: 'user' },
-          content: { content_type: 'text', parts: [message] }
-        }
-      ],
-      parent_message_id: crypto.randomUUID(),
-      model: CHATGPT_MODEL,
-      timezone_offset_min: new Date().getTimezoneOffset()
+      model: OPENAI_MODEL,
+      instructions: 'You are a helpful assistant that summarizes web page content.',
+      input: [{
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text: message }]
+      }],
+      store: false,
+      stream: true
     })
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('[API] Error response:', response.status, errorText.substring(0, 500));
     if (response.status === 401 || response.status === 403) {
       throw new Error('Authentication failed. Please reconnect to ChatGPT.');
     }
     throw new Error(`API error (${response.status}): ${errorText.substring(0, 200)}`);
   }
 
-  // Parse SSE stream
-  const text = await response.text();
+  // Check if response is SSE (streaming)
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('text/event-stream')) {
+    console.log('[API] Detected SSE content-type, using stream parser');
+    return parseSSEStream(response.body);
+  }
+  
+  // Try JSON first, but fall back to SSE if body starts with "event:" or "data:"
+  const rawText = await response.text();
+  console.log('[API] Response text preview:', rawText.substring(0, 100));
+  
+  if (rawText.startsWith('event:') || rawText.startsWith('data:')) {
+    console.log('[API] Response is SSE format despite JSON content-type, using stream parser');
+    return parseSSEText(rawText);
+  }
+  
+  try {
+    const data = JSON.parse(rawText);
+    console.log('[API] Response keys:', Object.keys(data));
+    
+    if (data.output_text) {
+      return data.output_text;
+    }
+    
+    if (data.output && Array.isArray(data.output)) {
+      for (const item of data.output) {
+        if (item.content && Array.isArray(item.content)) {
+          for (const content of item.content) {
+            if (content.text) {
+              return content.text;
+            }
+          }
+        }
+      }
+    }
+    
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    console.error('[API] JSON parse error:', e.message);
+    throw new Error(`Failed to parse API response: ${e.message}`);
+  }
+}
+
+async function parseSSEStream(body) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+  let completed = false;
+  
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(':')) continue;
+        
+        if (trimmed.startsWith('data:')) {
+          const dataStr = trimmed.substring(5).trim();
+          try {
+            const event = JSON.parse(dataStr);
+            const eventType = event.type;
+            
+            if (eventType === 'response.output_text.delta' && event.delta) {
+              fullText += event.delta;
+            } else if (eventType === 'response.output_item.done') {
+              const item = event.item;
+              if (item && item.content) {
+                for (const c of item.content) {
+                  if (c.text) fullText += c.text;
+                }
+              }
+            } else if (eventType === 'response.completed') {
+              completed = true;
+            } else if (eventType === 'response.error') {
+              throw new Error(event.error?.message || 'Stream error');
+            }
+          } catch (e) {
+            if (e.message && !e.message.includes('Unexpected token')) {
+              throw e;
+            }
+          }
+        }
+      }
+      
+      if (completed) break;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  
+  if (!fullText && !completed) {
+    return '[No content received from stream]';
+  }
+  
+  return fullText || '[Stream completed with no content]';
+}
+
+function parseSSEText(text) {
   const lines = text.split('\n');
-  let result = '';
+  let fullText = '';
+  let completed = false;
   
   for (const line of lines) {
-    if (line.startsWith('data: ')) {
-      const data = line.substring(6);
-      if (data === '[DONE]') break;
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith(':')) continue;
+    
+    if (trimmed.startsWith('data:')) {
+      const dataStr = trimmed.substring(5).trim();
       try {
-        const parsed = JSON.parse(data);
-        if (parsed.message?.content?.parts?.[0]) {
-          result = parsed.message.content.parts[0];
+        const event = JSON.parse(dataStr);
+        const eventType = event.type;
+        
+        if (eventType === 'response.output_text.delta' && event.delta) {
+          fullText += event.delta;
+        } else if (eventType === 'response.output_item.done') {
+          const item = event.item;
+          if (item && item.content) {
+            for (const c of item.content) {
+              if (c.text) fullText += c.text;
+            }
+          }
+        } else if (eventType === 'response.completed') {
+          completed = true;
+        } else if (eventType === 'response.error') {
+          throw new Error(event.error?.message || 'Stream error');
         }
       } catch (e) {
-        // Skip invalid JSON
+        if (e.message && !e.message.includes('Unexpected token')) {
+          throw e;
+        }
       }
     }
   }
   
-  return result || text;
+  if (!fullText && !completed) {
+    return '[No content received from stream]';
+  }
+  
+  return fullText || '[Stream completed with no content]';
 }

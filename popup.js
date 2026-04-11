@@ -328,45 +328,77 @@ async function handleSummarize() {
   }
 }
 
-async function extractTabContents(tabs) {
-  const contents = [];
-  const totalTabs = tabs.length;
+  async function extractTabContents(tabs) {
+    const contents = [];
+    const totalTabs = tabs.length;
 
-  for (let i = 0; i < totalTabs; i++) {
-    const tab = tabs[i];
-    updateProgress(i + 1, totalTabs);
-    loadingText.textContent = `Extracting content from tab ${i + 1}/${totalTabs}...`;
-    debugLog(`Extracting tab ${i + 1}/${totalTabs}: ${tab.title || 'Untitled'} (ID: ${tab.id})`);
-    debugLog(`Tab URL: ${tab.url || 'N/A'}`);
-    debugLog(`Tab status: ${tab.status || 'unknown'}`);
+    for (let i = 0; i < totalTabs; i++) {
+      const tab = tabs[i];
+      updateProgress(i + 1, totalTabs);
+      loadingText.textContent = `Extracting content from tab ${i + 1}/${totalTabs}...`;
+      debugLog(`Extracting tab ${i + 1}/${totalTabs}: ${tab.title || 'Untitled'} (ID: ${tab.id})`);
+      debugLog(`Tab URL: ${tab.url || 'N/A'}`);
+      debugLog(`Tab status: ${tab.status || 'unknown'}, discarded: ${tab.discarded || false}`);
 
-    try {
-      if (isRestrictedUrl(tab.url)) {
-        debugLog(`Tab ${i + 1} is restricted: ${tab.url}`, 'warn');
-        contents.push({ title: tab.title, url: tab.url, content: '[Restricted page]' });
-        continue;
+      try {
+        if (isRestrictedUrl(tab.url)) {
+          debugLog(`Tab ${i + 1} is restricted: ${tab.url}`, 'warn');
+          contents.push({ title: tab.title, url: tab.url, content: '[Restricted page]' });
+          continue;
+        }
+
+        // If tab is unloaded/discarded, reload it and wait for it to be ready
+        let currentTab = tab;
+        if (tab.status === 'unloaded' || tab.discarded) {
+          debugLog(`Tab ${tab.id} is unloaded/discarded, reloading...`);
+          await chrome.tabs.reload(tab.id);
+          currentTab = await waitForTabReady(tab.id);
+          debugLog(`Tab ${tab.id} reloaded, status: ${currentTab.status}`);
+        }
+
+        debugLog(`Injecting content.js into tab ${currentTab.id}...`);
+        const results = await executeScriptWithTimeout(currentTab.id, ['content.js'], 15000);
+        debugLog(`Script injection completed for tab ${currentTab.id}`);
+
+        if (results && results[0] && results[0].result) {
+          const contentLength = results[0].result.length;
+          debugLog(`Tab ${i + 1} extracted: ${contentLength} characters`);
+          contents.push({ title: currentTab.title, url: currentTab.url, content: results[0].result });
+        } else {
+          debugLog(`Tab ${i + 1} returned no content`, 'warn');
+          contents.push({ title: currentTab.title, url: currentTab.url, content: '[No content extracted]' });
+        }
+      } catch (error) {
+        debugLog(`Error extracting tab ${i + 1}: ${error.message}`, 'error');
+        let errorMsg = `[Error: ${error.message}]`;
+        if (error.message.includes('Cannot access contents')) {
+          errorMsg = '[Access denied: Chrome blocked this page. Enable "On all sites" in extension Site Access settings.]';
+        }
+        contents.push({ title: tab.title, url: tab.url, content: errorMsg });
       }
-
-      debugLog(`Injecting content.js into tab ${tab.id}...`);
-      const results = await executeScriptWithTimeout(tab.id, ['content.js'], 15000);
-      debugLog(`Script injection completed for tab ${tab.id}`);
-
-      if (results && results[0] && results[0].result) {
-        const contentLength = results[0].result.length;
-        debugLog(`Tab ${i + 1} extracted: ${contentLength} characters`);
-        contents.push({ title: tab.title, url: tab.url, content: results[0].result });
-      } else {
-        debugLog(`Tab ${i + 1} returned no content`, 'warn');
-        contents.push({ title: tab.title, url: tab.url, content: '[No content extracted]' });
-      }
-    } catch (error) {
-      debugLog(`Error extracting tab ${i + 1}: ${error.message}`, 'error');
-      contents.push({ title: tab.title, url: tab.url, content: `[Error: ${error.message}]` });
     }
+
+    return contents;
   }
 
-  return contents;
-}
+  function waitForTabReady(tabId, timeout = 30000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(listener);
+        chrome.tabs.get(tabId).then(resolve).catch(reject);
+      }, timeout);
+
+      function listener(updatedTabId, changeInfo, tab) {
+        if (updatedTabId === tabId && changeInfo.status === 'complete') {
+          clearTimeout(timer);
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve(tab);
+        }
+      }
+
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+  }
 
 function updateProgress(current, total) {
   const percentage = (current / total) * 100;
