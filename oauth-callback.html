@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Authentication Callback</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1a1a2e;
+      color: #fff;
+    }
+    .container {
+      text-align: center;
+      padding: 48px;
+    }
+    .icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #10a37f, #1a7f64);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    p { color: rgba(255,255,255,0.7); }
+    .error { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h1 id="status">Processing authentication...</h1>
+    <p id="message">Please wait</p>
+  </div>
+  <script src="oauth-callback.js"></script>
+</body>
+</html>
