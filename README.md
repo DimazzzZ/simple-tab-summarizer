@@ -1,16 +1,17 @@
 # Tab Group Summarizer - Chrome Extension
 
-A Chrome Extension (Manifest V3) that reads the content of all tabs within a specific Tab Group, summarizes them using OpenAI Codex API (free tier), and optionally closes the tabs after confirmation.
+A Chrome Extension (Manifest V3) that reads the content of all tabs within a specific Tab Group or Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or persistent sidebar panel.
 
 ## Features
 
-- 🔍 **Auto-detects** the current tab's group
-- 📄 **Extracts content** from all tabs in the group using smart selectors
-- 🤖 **AI-powered summarization** via OpenAI Codex (free tier)
-- 🔐 **OAuth PKCE authentication** (like Cline) - sign in with your OpenAI account
-- 📊 **Progress tracking** with loading states
-- ✅ **Safe tab closing** with confirmation dialog
-- 🎨 **Clean, modern UI**
+- 📑 **Tab Group Summarization** — Extract and summarize all tabs in a selected tab group
+- 📖 **Reading List Summarization** — Summarize pages saved to Chrome's Reading List (read-only)
+- 🤖 **AI-powered summarization** via ChatGPT Codex API with streaming responses
+- 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account, with automatic token refresh
+- 🌐 **Summary Language Selector** — Choose output language from 40+ languages (A-Z sorted)
+- 📌 **Popup / Sidebar Display Mode** — Toggle between a compact popup and a persistent sidebar panel
+- 🐛 **Debug Console** — Optional debug logging (toggle OFF by default)
+- 🎨 **Clean, modern UI** with progress tracking and error handling
 
 ## Project Structure
 
@@ -19,9 +20,13 @@ chrome-group-summarizer/
 ├── manifest.json          # Extension configuration (Manifest V3)
 ├── popup.html             # Popup UI structure
 ├── popup.js               # Popup logic and event handlers
-├── styles.css             # UI styling
-├── background.js          # Service worker (OAuth + OpenAI Codex API calls)
+├── sidebar.html           # Sidebar panel UI structure
+├── sidebar.js             # Sidebar panel logic (mirrors popup.js)
+├── styles.css             # Shared UI styling
+├── background.js          # Service worker (OAuth, summarization, display mode control)
 ├── content.js             # Content extraction script
+├── oauth-callback.html    # OAuth callback handler page
+├── oauth-callback.js      # OAuth callback handler logic
 ├── icons/
 │   └── icon.svg           # SVG source icon
 ├── .gitignore             # Git ignore rules
@@ -38,33 +43,53 @@ chrome-group-summarizer/
 4. Select the `chrome-group-summarizer` folder
 5. The extension icon should appear in your toolbar
 
-### 2. Authenticate with OpenAI
+### 2. Authenticate with ChatGPT
 
-1. Click the extension icon
+1. Click the extension icon to open the popup
 2. Click **Connect to ChatGPT**
-3. An OpenAI sign-in page will open
-4. Sign in with your OpenAI account
-5. After successful authentication, you'll be redirected back automatically
-6. The extension will store your access token and refresh it automatically
+3. An OpenAI sign-in page will open in a new tab
+4. Sign in with your OpenAI/ChatGPT account
+5. After successful authentication, the callback is intercepted and tokens are stored automatically
+6. Tokens are refreshed automatically when they expire
 
 ### 3. Using the Extension
 
-1. **Group your tabs**: Right-click any tab → "Add tab to new group" (or existing group)
-2. **Click the extension icon** while viewing a tab in the group
-3. **Click "Summarize Group"** to start the summarization
-4. **Review the summary** in the popup
-5. **Click "Done & Close Group"** when finished (with confirmation)
+#### Tab Group Mode (default)
+
+1. **Group your tabs**: Right-click any tab → "Add tab to new group" (or add to an existing group)
+2. **Click the extension icon** to open the popup
+3. **Select a tab group** from the dropdown
+4. **Select pages** you want to include (or use Select All / Deselect All)
+5. **Choose a summary language** from the language selector
+6. **Click "Summarize Selected"** to start the summarization
+7. **Review the summary** in the popup
+
+#### Reading List Mode
+
+1. **Switch the source** to "Reading List" using the "Summarize From" dropdown
+2. **Select pages** from your Chrome Reading List
+3. **Choose a summary language**
+4. **Click "Summarize Selected"** to start the summarization
+5. **Review the summary**
+
+#### Popup / Sidebar Mode Toggle
+
+- By default, the extension opens as a **popup** when you click the toolbar icon.
+- Click the **📌 Sidebar** button in the top-right corner to switch to **sidebar mode**.
+  - In sidebar mode, clicking the toolbar icon opens/closes the side panel.
+- Click the **📌 Popup** button in the sidebar to switch back to **popup mode**.
+- Your display mode preference is persisted across browser sessions.
 
 ## How It Works
 
-### Authentication (OAuth PKCE - like Cline)
+### Authentication (OAuth 2.0 PKCE)
 
-The extension uses the OpenAI Codex OAuth flow:
+The extension uses the OpenAI OAuth PKCE flow:
 1. Generates a PKCE code verifier and challenge
 2. Opens `auth.openai.com` for you to sign in
-3. Intercepts the callback URL with the auth code
+3. Intercepts the `localhost:1455/auth/callback` URL with the auth code via a global tab listener
 4. Exchanges the code for access + refresh tokens
-5. Automatically refreshes tokens when they expire
+5. Stores tokens in `chrome.storage.local` and automatically refreshes them before expiration
 
 ### Content Extraction (`content.js`)
 
@@ -72,27 +97,37 @@ The extension injects a content script into each tab that:
 1. Tries smart selectors (`article`, `main`, `.content`, etc.)
 2. Falls back to `document.body.innerText` with cleanup
 3. Removes navigation, ads, footers, and other non-content elements
-4. Limits content to ~50k characters per page
+4. Limits content to ~8,000 characters per tab
 
 ### Summarization (`background.js`)
 
 The service worker:
-1. Collects content from all tabs in the group
-2. Builds a structured prompt with tab titles and URLs
-3. Truncates if content exceeds token limits (~100k chars)
-4. Sends to OpenAI Codex API (`https://chatgpt.com/backend-api/conversation`)
-5. Returns the summary to the popup
+1. Collects content from all selected tabs or reading list entries
+2. Builds a structured prompt with page titles and URLs
+3. Truncates if content exceeds token limits
+4. Sends to the ChatGPT Codex API (`https://chatgpt.com/backend-api/codex/responses`) with `stream: true`
+5. Parses the SSE stream (`response.output_text.delta` events) to build the summary
+6. Returns the summary to the popup or sidebar panel
 
-### UI (`popup.html/js/css`)
+### Display Mode Management (`background.js`)
 
-The popup provides:
+The service worker centrally manages the display mode:
+- `set_display_mode` message: Switches between popup and sidebar mode
+- `get_display_mode` message: Returns the current mode preference
+- In **popup mode**: `chrome.action.setPopup({ popup: 'popup.html' })` and side panel is disabled
+- In **sidebar mode**: `chrome.action.setPopup({ popup: '' })` and `openPanelOnActionClick: true`
+
+### UI (`popup.html/js`, `sidebar.html/js`, `styles.css`)
+
+The popup and sidebar panel provide:
 1. Authentication status and connect/disconnect buttons
-2. Tab group detection with color indicator
-3. Tab count display
-4. Progress bar during extraction
-5. Loading spinner during AI processing
-6. Summary display with scrollable area
-7. Safe close button with confirmation
+2. Source selection (Tab Group or Reading List)
+3. Group/page selection with Select All / Deselect All
+4. Language selector for summary output
+5. Progress bar during content extraction
+6. Loading indicator during AI processing
+7. Summary display with scrollable area
+8. Debug console toggle (default OFF)
 
 ## Permissions Explained
 
@@ -100,20 +135,26 @@ The popup provides:
 |------------|---------|
 | `tabGroups` | Read tab group information |
 | `tabs` | Query and manage tabs |
-| `scripting` | Inject content extraction script |
-| `storage` | Store OAuth tokens |
-| `<all_urls>` | Access content on any page |
+| `scripting` | Inject content extraction script into tabs |
+| `storage` | Store OAuth tokens, display mode, debug settings, and language preference |
+| `webNavigation` | Support OAuth callback interception |
+| `readingList` | Access Chrome Reading List entries (read-only) |
+| `sidePanel` | Enable sidebar panel display mode |
+| `<all_urls>` | Access content on any page for summarization |
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| "No tab group detected" | Make sure your tabs are grouped (right-click tab → Add to group) |
-| "Not authenticated" | Click "Connect to ChatGPT" and sign in |
+| "No tab groups found" | Make sure your tabs are grouped (right-click tab → Add to group) |
+| "Not connected" | Click "Connect to ChatGPT" and sign in |
 | "Authentication failed" | Your session may have expired. Disconnect and reconnect. |
 | "Authentication timed out" | Complete the sign-in within 5 minutes |
-| Content not extracted | Some pages (chrome://, about:) are restricted |
-| Summary too long/short | Adjust the API call parameters in background.js |
+| Content not extracted | Some pages (`chrome://`, `about:`, `file://`) are restricted |
+| "Access denied: Chrome blocked this page" | Enable "On all sites" in extension Site Access settings |
+| Reading List empty | Add pages to your Reading List first (right-click page → "Add to Reading List") |
+| Sidebar not showing | Click the 📌 Sidebar button in the popup to switch to sidebar mode |
+| Summary seems incorrect | Try a different language or check the debug console for API errors |
 
 ## License
 
