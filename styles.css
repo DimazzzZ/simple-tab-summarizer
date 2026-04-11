@@ -163,14 +163,30 @@ header h1 {
 /* ============================================
    Sidebar Mode Adjustments
    ============================================ */
+html.sidebar-mode {
+  width: 100% !important;
+}
+
 body.sidebar-mode {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 100vh;
+  max-height: none !important;
+  overflow: hidden;
 }
 
 body.sidebar-mode .container {
-  max-width: 620px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  overflow-y: auto;
+}
+
+body.sidebar-mode .action-bar {
+  max-width: 100%;
+  margin: 0;
+  left: 0;
+  transform: none;
 }
 
 /* ============================================
