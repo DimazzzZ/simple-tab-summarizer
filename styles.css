@@ -55,8 +55,9 @@ header h1 {
   color: #4a4a68;
 }
 
-/* Group Selection */
-#group-section label {
+/* Group Selection & Language Selection */
+#group-section label,
+#language-section label {
   display: block;
   font-size: 12px;
   font-weight: 500;
@@ -64,7 +65,8 @@ header h1 {
   margin-bottom: 6px;
 }
 
-.group-select {
+.group-select,
+.language-select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
@@ -74,7 +76,8 @@ header h1 {
   cursor: pointer;
 }
 
-.group-select:focus {
+.group-select:focus,
+.language-select:focus {
   outline: none;
   border-color: #0066cc;
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
@@ -208,6 +211,24 @@ header h1 {
 
 .btn-small:hover {
   background: #f0f0f0;
+}
+
+/* Debug Toggle */
+#debug-toggle-section {
+  margin-top: 4px;
+}
+
+.debug-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4a4a68;
+  cursor: pointer;
+}
+
+.debug-toggle-label input[type="checkbox"] {
+  cursor: pointer;
 }
 
 /* Debug Console */
