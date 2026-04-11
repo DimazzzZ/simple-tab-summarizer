@@ -4,6 +4,7 @@ A Chrome Extension (Manifest V3) that reads the content of all tabs within a spe
 
 ## Features
 
+- 📄 **Current Tab Summarization** — Summarize the active tab with one click (default mode)
 - 📑 **Tab Group Summarization** — Extract and summarize all tabs in a selected tab group
 - 📖 **Reading List Summarization** — Summarize pages saved to Chrome's Reading List (read-only)
 - 🤖 **AI-powered summarization** via ChatGPT Codex API with streaming responses

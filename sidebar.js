@@ -45,7 +45,7 @@ let selectedReadingListIds = new Set();
 let isAuthenticated = false;
 let allGroups = [];
 let debugEnabled = false;
-let currentSource = 'tabGroup';
+let currentSource = 'currentTab';
 
 // Debug logging
 function debugLog(message, type = 'info') {
@@ -167,7 +167,12 @@ async function handleSourceChange() {
   hideSummary();
   hideError();
   
-  if (currentSource === 'tabGroup') {
+  if (currentSource === 'currentTab') {
+    groupSection.classList.add('hidden');
+    readinglistSection.classList.add('hidden');
+    pagesSection.classList.add('hidden');
+    updateButtonsState();
+  } else if (currentSource === 'tabGroup') {
     groupSection.classList.remove('hidden');
     readinglistSection.classList.add('hidden');
     pagesSection.classList.add('hidden');
@@ -281,13 +286,16 @@ function updateAuthUI(authenticated) {
 
 function updateButtonsState() {
   let hasSelection = false;
-  if (currentSource === 'tabGroup') {
+  if (currentSource === 'currentTab') {
+    // Current Tab mode - always enabled when authenticated
+    hasSelection = true;
+  } else if (currentSource === 'tabGroup') {
     hasSelection = selectedTabIds.size > 0;
   } else if (currentSource === 'readingList') {
     hasSelection = selectedReadingListIds.size > 0;
   }
   summarizeBtn.disabled = !isAuthenticated || !hasSelection;
-  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Selected: ${currentSource === 'tabGroup' ? selectedTabIds.size : selectedReadingListIds.size}`);
+  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Source: ${currentSource}, Selected: ${currentSource === 'tabGroup' ? selectedTabIds.size : currentSource === 'readingList' ? selectedReadingListIds.size : 'N/A (current tab)'}`);
 }
 
 async function handleConnect() {
@@ -497,7 +505,9 @@ async function handleCopySummary() {
 
 async function handleSummarize() {
   let itemCount = 0;
-  if (currentSource === 'tabGroup') {
+  if (currentSource === 'currentTab') {
+    itemCount = 1;
+  } else if (currentSource === 'tabGroup') {
     itemCount = selectedTabIds.size;
   } else if (currentSource === 'readingList') {
     itemCount = selectedReadingListIds.size;
@@ -523,7 +533,15 @@ async function handleSummarize() {
 
   try {
     let contents = [];
-    if (currentSource === 'tabGroup') {
+    if (currentSource === 'currentTab') {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!activeTab) {
+        showError('No active tab found.');
+        return;
+      }
+      debugLog(`Summarizing current tab: ${activeTab.title || 'Untitled'}`);
+      contents = await extractTabContents([activeTab]);
+    } else if (currentSource === 'tabGroup') {
       const selectedTabs = groupTabs.filter(t => selectedTabIds.has(t.id));
       contents = await extractTabContents(selectedTabs);
     } else if (currentSource === 'readingList') {
