@@ -95,7 +95,7 @@ html, body {
 }
 
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-family), sans-serif;
   min-height: 180px;
   background: var(--color-background);
   color: var(--color-on-surface);
@@ -141,7 +141,7 @@ header h1 {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 12px;
   font-weight: 500;
-  font-family: var(--font-family);
+  font-family: var(--font-family), sans-serif;
   border: 1px solid var(--color-outline);
   border-radius: var(--radius-full);
   background: var(--color-surface);
@@ -293,7 +293,7 @@ select {
   border: 1px solid var(--color-outline);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-family: var(--font-family);
+  font-family: var(--font-family), sans-serif;
   background: var(--color-surface);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23444746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -475,7 +475,7 @@ select:hover:not(:focus) {
   border-radius: var(--radius-full);
   font-size: 14px;
   font-weight: 500;
-  font-family: var(--font-family);
+  font-family: var(--font-family), sans-serif;
   cursor: pointer;
   transition: all var(--transition-fast);
   margin-bottom: var(--spacing-sm);
@@ -518,7 +518,7 @@ select:hover:not(:focus) {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 11px;
   font-weight: 500;
-  font-family: var(--font-family);
+  font-family: var(--font-family), sans-serif;
   border: 1px solid var(--color-outline);
   border-radius: var(--radius-full);
   background: var(--color-surface);
@@ -595,7 +595,7 @@ select:hover:not(:focus) {
 .debug-console {
   background: var(--color-debug-bg);
   color: var(--color-debug-text);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
   padding: var(--spacing-md);
   border-radius: var(--radius-sm);
@@ -683,7 +683,7 @@ select:hover:not(:focus) {
   background: var(--color-primary);
   border-radius: var(--radius-full);
   transition: width var(--transition-normal);
-  width: 0%;
+  width: 0;
 }
 
 #progress-text {
