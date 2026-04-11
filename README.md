@@ -1,4 +1,4 @@
-# Tab Group Summarizer - Chrome Extension
+# Simple Tab Summarizer - Chrome Extension
 
 A Chrome Extension (Manifest V3) that reads the content of all tabs within a specific Tab Group or Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or persistent sidebar panel.
 
