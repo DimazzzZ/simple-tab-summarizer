@@ -26,6 +26,15 @@
       </button>
     </div>
 
+    <!-- Source Selection -->
+    <div id="source-section" class="section">
+      <label for="source-select">Summarize From:</label>
+      <select id="source-select" class="source-select">
+        <option value="tabGroup">Tab Group</option>
+        <option value="readingList">Reading List</option>
+      </select>
+    </div>
+
     <!-- Group Selection -->
     <div id="group-section" class="section">
       <label for="group-select">Select Tab Group:</label>
@@ -34,6 +43,21 @@
       </select>
       <div id="no-groups" class="no-groups hidden">
         <p>No tab groups found. Create one by right-clicking a tab → "Add tab to new group".</p>
+      </div>
+    </div>
+
+    <!-- Reading List Section -->
+    <div id="readinglist-section" class="section hidden">
+      <div class="pages-header">
+        <label>Reading List:</label>
+        <div class="select-all-btns">
+          <button id="select-all-btn" class="btn-small">Select All</button>
+          <button id="deselect-all-btn" class="btn-small">Deselect All</button>
+        </div>
+      </div>
+      <div id="readinglist-list" class="pages-list"></div>
+      <div id="no-readinglist" class="no-groups hidden">
+        <p>No reading list entries found. Add pages to your Reading List first.</p>
       </div>
     </div>
 

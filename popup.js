@@ -3,8 +3,13 @@ const authIcon = document.getElementById('auth-icon');
 const authText = document.getElementById('auth-text');
 const connectBtn = document.getElementById('connect-btn');
 const disconnectBtn = document.getElementById('disconnect-btn');
+const sourceSelect = document.getElementById('source-select');
+const groupSection = document.getElementById('group-section');
 const groupSelect = document.getElementById('group-select');
 const noGroups = document.getElementById('no-groups');
+const readinglistSection = document.getElementById('readinglist-section');
+const readinglistList = document.getElementById('readinglist-list');
+const noReadinglist = document.getElementById('no-readinglist');
 const pagesSection = document.getElementById('pages-section');
 const pagesList = document.getElementById('pages-list');
 const selectAllBtn = document.getElementById('select-all-btn');
@@ -27,10 +32,13 @@ const errorMessage = document.getElementById('error-message');
 // State
 let selectedGroupId = null;
 let groupTabs = [];
+let readingListEntries = [];
 let selectedTabIds = new Set();
+let selectedReadingListIds = new Set();
 let isAuthenticated = false;
 let allGroups = [];
 let debugEnabled = false;
+let currentSource = 'tabGroup';
 
 // Debug logging
 function debugLog(message, type = 'info') {
@@ -90,6 +98,7 @@ function updateDebugVisibility() {
 function setupEventListeners() {
   connectBtn.addEventListener('click', handleConnect);
   disconnectBtn.addEventListener('click', handleDisconnect);
+  sourceSelect.addEventListener('change', handleSourceChange);
   groupSelect.addEventListener('change', handleGroupSelect);
   selectAllBtn.addEventListener('click', handleSelectAll);
   deselectAllBtn.addEventListener('click', handleDeselectAll);
@@ -105,6 +114,91 @@ function setupEventListeners() {
     await saveSetting('summaryLanguage', languageSelect.value);
     debugLog(`Summary language changed to: ${languageSelect.value}`);
   });
+}
+
+async function handleSourceChange() {
+  currentSource = sourceSelect.value;
+  debugLog(`Source changed to: ${currentSource}`);
+  
+  // Reset selections
+  selectedTabIds.clear();
+  selectedReadingListIds.clear();
+  hideSummary();
+  hideError();
+  
+  if (currentSource === 'tabGroup') {
+    groupSection.classList.remove('hidden');
+    readinglistSection.classList.add('hidden');
+    pagesSection.classList.add('hidden');
+    updateButtonsState();
+  } else if (currentSource === 'readingList') {
+    groupSection.classList.add('hidden');
+    await loadReadingList();
+  }
+}
+
+async function loadReadingList() {
+  try {
+    debugLog('Loading reading list...');
+    if (!chrome.readingList) {
+      debugLog('Reading List API not available', 'error');
+      showError('Reading List is not available in this browser.');
+      readinglistSection.classList.add('hidden');
+      return;
+    }
+    
+    const entries = await chrome.readingList.query({});
+    readingListEntries = entries;
+    debugLog(`Found ${entries.length} reading list entries`);
+    
+    if (entries.length === 0) {
+      readinglistList.innerHTML = '';
+      noReadinglist.classList.remove('hidden');
+      readinglistSection.classList.remove('hidden');
+      return;
+    }
+    
+    noReadinglist.classList.add('hidden');
+    renderReadingList();
+    readinglistSection.classList.remove('hidden');
+  } catch (error) {
+    debugLog(`Error loading reading list: ${error.message}`, 'error');
+    showError('Failed to load reading list.');
+  }
+}
+
+function renderReadingList() {
+  readinglistList.innerHTML = '';
+  
+  readingListEntries.forEach((entry, index) => {
+    const item = document.createElement('label');
+    item.className = 'page-item';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = index;
+    checkbox.checked = selectedReadingListIds.has(index);
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        selectedReadingListIds.add(index);
+      } else {
+        selectedReadingListIds.delete(index);
+      }
+      updateButtonsState();
+      debugLog(`Reading list selection changed: ${selectedReadingListIds.size} selected`);
+    });
+    
+    const text = document.createElement('span');
+    text.className = 'page-title';
+    text.textContent = entry.title || entry.url;
+    text.title = entry.url;
+    
+    item.appendChild(checkbox);
+    item.appendChild(text);
+    readinglistList.appendChild(item);
+  });
+  
+  debugLog(`Rendered ${readingListEntries.length} reading list checkboxes`);
 }
 
 async function checkAuthStatus() {
@@ -137,9 +231,14 @@ function updateAuthUI(authenticated) {
 }
 
 function updateButtonsState() {
-  const hasSelection = selectedTabIds.size > 0;
+  let hasSelection = false;
+  if (currentSource === 'tabGroup') {
+    hasSelection = selectedTabIds.size > 0;
+  } else if (currentSource === 'readingList') {
+    hasSelection = selectedReadingListIds.size > 0;
+  }
   summarizeBtn.disabled = !isAuthenticated || !hasSelection;
-  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Selected tabs: ${selectedTabIds.size}`);
+  debugLog(`Buttons updated - Summarize: ${!summarizeBtn.disabled}, Selected: ${currentSource === 'tabGroup' ? selectedTabIds.size : selectedReadingListIds.size}`);
 }
 
 async function handleConnect() {
@@ -301,22 +400,41 @@ function renderPagesList() {
 }
 
 function handleSelectAll() {
-  selectedTabIds = new Set(groupTabs.map(t => t.id));
-  pagesList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+  if (currentSource === 'tabGroup') {
+    selectedTabIds = new Set(groupTabs.map(t => t.id));
+    pagesList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    debugLog(`Selected all ${selectedTabIds.size} tabs`);
+  } else if (currentSource === 'readingList') {
+    selectedReadingListIds = new Set(readingListEntries.map((_, i) => i));
+    readinglistList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    debugLog(`Selected all ${selectedReadingListIds.size} reading list entries`);
+  }
   updateButtonsState();
-  debugLog(`Selected all ${selectedTabIds.size} tabs`);
 }
 
 function handleDeselectAll() {
-  selectedTabIds.clear();
-  pagesList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  if (currentSource === 'tabGroup') {
+    selectedTabIds.clear();
+    pagesList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    debugLog('Deselected all tabs');
+  } else if (currentSource === 'readingList') {
+    selectedReadingListIds.clear();
+    readinglistList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    debugLog('Deselected all reading list entries');
+  }
   updateButtonsState();
-  debugLog('Deselected all tabs');
 }
 
 async function handleSummarize() {
-  if (selectedTabIds.size === 0) {
-    showError('No tabs selected.');
+  let itemCount = 0;
+  if (currentSource === 'tabGroup') {
+    itemCount = selectedTabIds.size;
+  } else if (currentSource === 'readingList') {
+    itemCount = selectedReadingListIds.size;
+  }
+
+  if (itemCount === 0) {
+    showError('No items selected.');
     return;
   }
 
@@ -325,9 +443,8 @@ async function handleSummarize() {
     return;
   }
 
-  const selectedTabs = groupTabs.filter(t => selectedTabIds.has(t.id));
   const summaryLanguage = languageSelect.value || 'English';
-  debugLog(`Starting summarization for ${selectedTabs.length} tabs in ${summaryLanguage}`);
+  debugLog(`Starting summarization for ${itemCount} ${currentSource} items in ${summaryLanguage}`);
 
   showLoading();
   hideError();
@@ -335,16 +452,23 @@ async function handleSummarize() {
   summarizeBtn.disabled = true;
 
   try {
-    const tabContents = await extractTabContents(selectedTabs);
-    debugLog(`Extracted content from ${tabContents.length} tabs`);
+    let contents = [];
+    if (currentSource === 'tabGroup') {
+      const selectedTabs = groupTabs.filter(t => selectedTabIds.has(t.id));
+      contents = await extractTabContents(selectedTabs);
+    } else if (currentSource === 'readingList') {
+      contents = await extractReadingListContents();
+    }
+    
+    debugLog(`Extracted content from ${contents.length} items`);
     
     loadingText.textContent = 'Sending to AI for summarization...';
     debugLog('Sending request to ChatGPT API...');
     
     const summary = await chrome.runtime.sendMessage({
       action: 'summarize',
-      contents: tabContents,
-      tabCount: tabContents.length,
+      contents: contents,
+      tabCount: contents.length,
       language: summaryLanguage
     });
 
@@ -357,7 +481,7 @@ async function handleSummarize() {
     }
   } catch (error) {
     debugLog(`Error during summarization: ${error.message}`, 'error');
-    showError('Failed to summarize tabs. Please try again.');
+    showError('Failed to summarize. Please try again.');
   } finally {
     hideLoading();
     updateButtonsState();
@@ -454,6 +578,62 @@ function showSummary(text) { summaryContent.textContent = text; summarySection.c
 function hideSummary() { summarySection.classList.add('hidden'); }
 function showError(message) { errorMessage.textContent = message; errorSection.classList.remove('hidden'); debugLog(`Error: ${message}`, 'error'); }
 function hideError() { errorSection.classList.add('hidden'); }
+
+async function extractReadingListContents() {
+  const contents = [];
+  const selectedEntries = readingListEntries.filter((_, i) => selectedReadingListIds.has(i));
+  const totalItems = selectedEntries.length;
+
+  for (let i = 0; i < totalItems; i++) {
+    const entry = selectedEntries[i];
+    updateProgress(i + 1, totalItems);
+    loadingText.textContent = `Extracting content from page ${i + 1}/${totalItems}...`;
+    debugLog(`Extracting reading list entry ${i + 1}/${totalItems}: ${entry.title || 'Untitled'} (${entry.url})`);
+
+    try {
+      if (isRestrictedUrl(entry.url)) {
+        debugLog(`Entry ${i + 1} is restricted: ${entry.url}`, 'warn');
+        contents.push({ title: entry.title || 'Untitled', url: entry.url, content: '[Restricted page]' });
+        continue;
+      }
+
+      // Open URL in a background tab
+      debugLog(`Opening ${entry.url} in background tab...`);
+      const tempTab = await chrome.tabs.create({ url: entry.url, active: false });
+      
+      // Wait for tab to be ready
+      const readyTab = await waitForTabReady(tempTab.id, 15000);
+      debugLog(`Tab ${readyTab.id} ready, status: ${readyTab.status}`);
+
+      // Inject content script
+      debugLog(`Injecting content.js into tab ${readyTab.id}...`);
+      const results = await executeScriptWithTimeout(readyTab.id, ['content.js'], 15000);
+      debugLog(`Script injection completed for tab ${readyTab.id}`);
+
+      // Close the temp tab
+      try { await chrome.tabs.remove(readyTab.id); } catch {}
+      debugLog(`Closed temp tab ${readyTab.id}`);
+
+      if (results && results[0] && results[0].result) {
+        const contentLength = results[0].result.length;
+        debugLog(`Entry ${i + 1} extracted: ${contentLength} characters`);
+        contents.push({ title: entry.title || 'Untitled', url: entry.url, content: results[0].result });
+      } else {
+        debugLog(`Entry ${i + 1} returned no content`, 'warn');
+        contents.push({ title: entry.title || 'Untitled', url: entry.url, content: '[No content extracted]' });
+      }
+    } catch (error) {
+      debugLog(`Error extracting entry ${i + 1}: ${error.message}`, 'error');
+      let errorMsg = `[Error: ${error.message}]`;
+      if (error.message.includes('Cannot access contents')) {
+        errorMsg = '[Access denied: Chrome blocked this page.]';
+      }
+      contents.push({ title: entry.title || 'Untitled', url: entry.url, content: errorMsg });
+    }
+  }
+
+  return contents;
+}
 
 function isRestrictedUrl(url) {
   if (!url) return true;
