@@ -88,7 +88,7 @@
 }
 
 html, body {
-  width: 300px;
+  width: 350px;
   max-height: 600px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -264,6 +264,108 @@ body.sidebar-mode .action-bar {
   margin-bottom: 0;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 13px;
+}
+
+/* ============================================
+   Compact Auth Row (tighter layout)
+   ============================================ */
+.auth-row-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1);
+  margin-bottom: var(--spacing-md);
+}
+
+.auth-icon-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-variant);
+  flex-shrink: 0;
+}
+
+.auth-icon-compact svg {
+  width: 12px;
+  height: 12px;
+}
+
+.auth-icon-compact.connected {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.auth-icon-compact.disconnected {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.auth-text-compact {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-compact {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-family), sans-serif;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-compact:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-compact:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-compact.hidden {
+  display: none;
+}
+
+/* Empty state compact (inside config card) */
+.empty-state-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  text-align: center;
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.empty-state-compact svg {
+  width: 24px;
+  height: 24px;
+  color: var(--color-outline);
+  margin-bottom: var(--spacing-sm);
+}
+
+.empty-state-compact p {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  line-height: 1.4;
 }
 
 /* ============================================
