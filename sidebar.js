@@ -1,5 +1,5 @@
 // Sidebar entrypoint — thin wrapper around shared UIController
-import './ui-controller.js';
+import { UIController } from './ui-controller.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const dom = {

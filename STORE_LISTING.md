@@ -15,7 +15,7 @@ Simple Tab Summarizer uses AI to summarize web pages, tab groups, and reading li
 • **Reading List Summarization** — Summarize pages saved to Chrome's Reading List
 • **40+ Languages** — Choose your summary language from Arabic to Vietnamese
 • **Popup or Sidebar** — Use as a compact popup or a persistent sidebar panel
-• **Free to Use** — Uses your existing ChatGPT account
+• **Free to Use** — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
 ### How to Use
 

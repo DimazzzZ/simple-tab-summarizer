@@ -5,7 +5,11 @@
 <h1 align="center">Simple Tab Summarizer</h1>
 <p align="center">Free AI summaries for the current tab, tab groups, and reading list.</p>
 
-A Chrome Extension (Manifest V3) that reads the content of all tabs within a specific Tab Group or Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or persistent sidebar panel.
+A Chrome Extension (Manifest V3) that reads the content of the current tab, selected tabs from a tab group, or pages from Chrome's Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or persistent sidebar panel.
+
+## Free to Use
+
+**This extension itself is free to use.** You need a ChatGPT/OpenAI account to connect it. OpenAI offers a free ChatGPT tier for many users, so you may be able to start without a paid subscription. Availability, supported features, and usage limits depend on OpenAI's current policies and your account status, and may change over time. Check [OpenAI's official pricing and usage documentation](https://openai.com/pricing) for the latest details.
 
 ## Features
 
@@ -22,27 +26,36 @@ A Chrome Extension (Manifest V3) that reads the content of all tabs within a spe
 ## Project Structure
 
 ```
-chrome-group-summarizer/
-├── manifest.json          # Extension configuration (Manifest V3)
-├── popup.html             # Popup UI structure
-├── popup.js               # Popup entrypoint (thin wrapper)
-├── sidebar.html           # Sidebar panel UI structure
-├── sidebar.js             # Sidebar entrypoint (thin wrapper)
-├── ui-controller.js       # Shared UI controller (common logic for popup + sidebar)
-├── styles.css             # Shared UI styling
-├── background.js          # Service worker (OAuth, summarization, display mode control)
-├── content.js             # Fast content extraction script (textContent-based)
-├── oauth-callback.html    # OAuth callback handler page
-├── oauth-callback.js      # OAuth callback handler logic
+simple-tab-summarizer/
+├── manifest.json            # Extension configuration (Manifest V3)
+├── popup.html               # Popup UI structure
+├── popup.js                 # Popup entrypoint (thin wrapper)
+├── sidebar.html             # Sidebar panel UI structure
+├── sidebar.js               # Sidebar entrypoint (thin wrapper)
+├── ui-controller.js         # Shared UI controller (common logic for popup + sidebar)
+├── styles.css               # Shared UI styling
+├── background.js            # Service worker (OAuth, summarization, display mode control)
+├── content.js               # Fast content extraction script (textContent-based)
+├── package.json             # Node.js dependencies and npm scripts
+├── package-lock.json        # Locked dependency versions
+├── playwright.config.js     # Playwright E2E test configuration
 ├── icons/
-│   ├── icon.svg           # SVG source icon
-│   ├── icon16.png         # Toolbar icon (16x16)
-│   ├── icon48.png         # Extension page icon (48x48)
-│   └── icon128.png        # Chrome Web Store icon (128x128)
-├── PRIVACY.md             # Privacy policy
-├── PUBLISHING_AUDIT.md    # Publishing readiness audit
-├── .gitignore             # Git ignore rules
-└── README.md              # This file
+│   ├── icon.svg             # SVG source icon
+│   ├── icon16.png           # Toolbar icon (16x16)
+│   ├── icon48.png           # Extension page icon (48x48)
+│   └── icon128.png          # Chrome Web Store icon (128x128)
+├── scripts/
+│   └── generate-icons.sh    # Icon generation script
+├── tests/
+│   ├── e2e/                 # Playwright E2E tests
+│   │   └── popup.spec.js
+│   └── unit/                # Unit tests
+│       ├── test-background.js
+│       └── test-extraction.js
+├── PRIVACY.md               # Privacy policy
+├── STORE_LISTING.md         # Chrome Web Store listing
+├── .gitignore               # Git ignore rules
+└── README.md                # This file
 ```
 
 ## Setup Instructions
@@ -52,7 +65,7 @@ chrome-group-summarizer/
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable **Developer mode** (toggle in the top-right corner)
 3. Click **Load unpacked**
-4. Select the `chrome-group-summarizer` folder
+4. Select the `simple-tab-summarizer` folder
 5. The extension icon should appear in your toolbar
 
 ### 2. Authenticate with ChatGPT
@@ -66,10 +79,18 @@ chrome-group-summarizer/
 
 ### 3. Using the Extension
 
-#### Tab Group Mode (default)
+#### Current Tab Mode (default)
+
+1. **Open the tab** you want to summarize
+2. **Click the extension icon** to open the popup
+3. **Choose a summary language** from the language selector
+4. **Click "Summarize Selected"** to start the summarization
+5. **Review the summary** in the popup
+
+#### Tab Group Mode
 
 1. **Group your tabs**: Right-click any tab → "Add tab to new group" (or add to an existing group)
-2. **Click the extension icon** to open the popup
+2. **Switch the source** to "Tab Group" using the "Summarize From" dropdown
 3. **Select a tab group** from the dropdown
 4. **Select pages** you want to include (or use Select All / Deselect All)
 5. **Choose a summary language** from the language selector

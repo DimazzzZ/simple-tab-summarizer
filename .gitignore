@@ -27,3 +27,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Test results
+test-results/
+
+# Other
+PUBLISHING_AUDIT.md

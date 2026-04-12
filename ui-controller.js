@@ -6,7 +6,7 @@
  * and mode-toggle behavior.
  */
 
-class UIController {
+export class UIController {
   /**
    * @param {Object} dom - DOM element references
    * @param {Object} options - UI-specific options
@@ -225,7 +225,7 @@ class UIController {
   async handleConnect() {
     this.debugLog('Attempting to connect to ChatGPT...');
     this.dom.connectBtn.disabled = true;
-    this.dom.connectBtn.querySelector('.btn-text').textContent = 'Connecting...';
+    this.setConnectBtnText('Connecting...');
 
     try {
       const result = await chrome.runtime.sendMessage({ action: 'connect' });
@@ -255,7 +255,16 @@ class UIController {
       this.updateAuthUI(false);
     } finally {
       this.dom.connectBtn.disabled = false;
-      this.dom.connectBtn.querySelector('.btn-text').textContent = 'Connect to ChatGPT';
+      this.setConnectBtnText('Connect to ChatGPT');
+    }
+  }
+
+  setConnectBtnText(text) {
+    const btnTextEl = this.dom.connectBtn.querySelector('.btn-text');
+    if (btnTextEl) {
+      btnTextEl.textContent = text;
+    } else {
+      this.dom.connectBtn.textContent = text;
     }
   }
 
