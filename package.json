@@ -1,5 +1,5 @@
 {
-  "name": "chrome-group-summarizer",
+  "name": "simple-tab-summarizer",
   "version": "1.0.0",
   "description": "Free AI summarizer for tabs, tab groups, and reading lists",
   "type": "module",
