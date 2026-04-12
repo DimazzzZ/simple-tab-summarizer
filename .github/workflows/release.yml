@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  checks:
+    uses: ./.github/workflows/reusable-checks.yml
+
+  package:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate version matches manifest
+        run: |
+          MANIFEST_VERSION=$(node -e "console.log(require('./manifest.json').version)")
+          if [ "$MANIFEST_VERSION" != "${{ inputs.version }}" ]; then
+            echo "Version mismatch: input=${{ inputs.version }}, manifest=$MANIFEST_VERSION"
+            echo "Please update manifest.json version to match the release version."
+            exit 1
+          fi
+          echo "Version matches: $MANIFEST_VERSION"
+
+      - name: Install zip utility
+        run: sudo apt-get install -y zip
+
+      - name: Package extension
+        run: |
+          chmod +x scripts/package-extension.sh
+          ./scripts/package-extension.sh "${{ inputs.version }}"
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: simple-tab-summarizer-v${{ inputs.version }}
+          path: dist/simple-tab-summarizer-v${{ inputs.version }}.zip
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          files: dist/simple-tab-summarizer-v${{ inputs.version }}.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
