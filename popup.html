@@ -17,36 +17,18 @@
       </button>
     </header>
 
-    <!-- Auth Card -->
-    <div id="auth-section" class="card">
-      <div id="auth-status" class="auth-box">
-        <span id="auth-icon" class="auth-icon disconnected">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </span>
-        <span id="auth-text">Not connected</span>
-      </div>
-      <div class="auth-row">
-        <button id="connect-btn" class="btn btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          <span class="btn-text">Connect</span>
-        </button>
-        <button id="disconnect-btn" class="btn btn-secondary hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          <span class="btn-text">Disconnect</span>
-        </button>
-      </div>
+    <!-- Compact Auth Row -->
+    <div id="auth-section" class="auth-row-compact">
+      <span id="auth-icon" class="auth-icon-compact disconnected">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </span>
+      <span id="auth-text" class="auth-text-compact">Not connected</span>
+      <button id="connect-btn" class="btn-compact">Connect</button>
+      <button id="disconnect-btn" class="btn-compact hidden">Disconnect</button>
     </div>
 
     <!-- Configuration Card -->
     <div class="card">
-      <div class="form-group">
-        <label for="source-select">Summarize From</label>
-        <select id="source-select" class="source-select">
-          <option value="currentTab" selected>Current Tab</option>
-          <option value="tabGroup">Tab Group</option>
-          <option value="readingList">Reading List</option>
-        </select>
-      </div>
       <div class="form-group">
         <label for="language-select">Summary Language</label>
         <select id="language-select" class="language-select">
@@ -93,19 +75,23 @@
           <option value="Vietnamese">Vietnamese</option>
         </select>
       </div>
-    </div>
-
-    <!-- Group Selection Card -->
-    <div id="group-section" class="card hidden">
       <div class="form-group">
+        <label for="source-select">Summarize From</label>
+        <select id="source-select" class="source-select">
+          <option value="currentTab" selected>Current Tab</option>
+          <option value="tabGroup">Tab Group</option>
+          <option value="readingList">Reading List</option>
+        </select>
+      </div>
+      <div id="group-section" class="form-group hidden">
         <label for="group-select">Select Tab Group</label>
         <select id="group-select" class="group-select">
           <option value="">-- Select a group --</option>
         </select>
       </div>
-      <div id="no-groups" class="empty-state hidden">
+      <div id="no-groups" class="empty-state-compact hidden">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 2v4"/><path d="M18 2v4"/><path d="M2 10h20"/></svg>
-        <p>No tab groups found.<br>Create one by right-clicking a tab → "Add tab to new group".</p>
+        <p>No tab groups found.<br>Create one: right-click a tab → "Add tab to new group".</p>
       </div>
     </div>
 
