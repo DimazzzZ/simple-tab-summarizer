@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Simple Tab Summarizer</h1>
-<p align="center">AI summaries for the current tab, tab groups, and reading list.</p>
+<p align="center">Free AI summaries for the current tab, tab groups, and reading list.</p>
 
 A Chrome Extension (Manifest V3) that reads the content of all tabs within a specific Tab Group or Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or persistent sidebar panel.
 
@@ -164,4 +164,4 @@ The popup and sidebar panel provide:
 
 ## License
 
-MIT License - Feel free to modify and distribute.
+[Apache 2.0](LICENSE)
