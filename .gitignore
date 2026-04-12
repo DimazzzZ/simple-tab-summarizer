@@ -27,7 +27,3 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Chrome extension specific
-# Keep icons but ignore any generated assets
-icons/*.png
-!icons/icon.png
