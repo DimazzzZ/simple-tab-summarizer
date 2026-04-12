@@ -49,9 +49,19 @@ This extension extracts text content from web pages you choose and sends it to C
 |-------|------|--------|
 | Small tile icon | 128x128 PNG | ✅ `icons/icon128.png` |
 | Large tile icon | 440x280 PNG | ⬜ Needs design |
-| Screenshots (min 1) | 1280x800 or 640x480 | ⬜ Needs screenshots |
+| Screenshots (min 1) | 1280x800 or 640x480 | ✅ See `screenshots/` folder |
 | Promotional tile (optional) | 440x50 | ⬜ Optional |
 | YouTube video (optional) | — | ⬜ Optional |
+
+### Available Screenshots
+
+| File | Description |
+|------|-------------|
+| `screenshots/01-current-tab-mode.png` | Current tab summarization UI |
+| `screenshots/02-tab-group-selection.png` | Tab group selection with page picker |
+| `screenshots/03-tab-group-summary.png` | Tab group summary result |
+| `screenshots/04-reading-list-mode.png` | Reading list summarization |
+| `screenshots/05-sidebar-mode.png` | Sidebar display mode |
 
 ---
 
