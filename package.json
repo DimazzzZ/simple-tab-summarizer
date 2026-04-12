@@ -1,0 +1,14 @@
+{
+  "name": "chrome-group-summarizer",
+  "version": "1.0.0",
+  "description": "Free AI summarizer for tabs, tab groups, and reading lists",
+  "type": "module",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:unit": "node tests/unit/test-extraction.js && node tests/unit/test-background.js",
+    "test:e2e": "npx playwright test tests/e2e/"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}
