@@ -61,51 +61,13 @@ function debugLog(message, type = 'info') {
 }
 
 // Helper: execute script with timeout
-function executeScriptWithTimeout(tabId, files, timeoutMs = 25000) {
+function executeScriptWithTimeout(tabId, files, timeoutMs = 8000) {
   return Promise.race([
     chrome.scripting.executeScript({ target: { tabId }, files }),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Script execution timed out after ${timeoutMs}ms`)), timeoutMs)
     )
   ]);
-}
-
-// Lightweight fallback extraction when main script times out
-async function extractFallbackContent(tabId) {
-  try {
-    const results = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: () => {
-        const parts = [];
-        try { parts.push('Title: ' + (document.title || '')); } catch (e) {}
-        try {
-          const meta = document.querySelector('meta[name="description"]');
-          if (meta && meta.content) parts.push('Description: ' + meta.content);
-        } catch (e) {}
-        try {
-          const headings = document.querySelectorAll('h1, h2, h3');
-          if (headings.length > 0) {
-            const hTexts = Array.from(headings).slice(0, 10).map(h => h.innerText.trim()).filter(t => t);
-            if (hTexts.length > 0) parts.push('Headings: ' + hTexts.join(' | '));
-          }
-        } catch (e) {}
-        try {
-          const paras = document.querySelectorAll('p');
-          if (paras.length > 0) {
-            const pTexts = Array.from(paras).slice(0, 5).map(p => p.innerText.trim()).filter(t => t.length > 20);
-            if (pTexts.length > 0) parts.push('Content: ' + pTexts.join(' '));
-          }
-        } catch (e) {}
-        return parts.join('\n').substring(0, 2000);
-      }
-    });
-    if (results && results[0] && results[0].result) {
-      return results[0].result;
-    }
-  } catch (e) {
-    // Ignore fallback failures
-  }
-  return '[Page content unavailable]';
 }
 
 // Initialize sidebar
@@ -617,14 +579,15 @@ async function handleSummarize() {
 async function extractTabContents(tabs) {
   const contents = new Array(tabs.length);
   const totalTabs = tabs.length;
-  const CONCURRENCY = 2; // Process 2 tabs at a time for speed
-
+  const CONCURRENCY = 2; // Process 2 tabs at a time
   let completed = 0;
 
   async function extractSingleTab(index, tab) {
     debugLog(`Extracting tab ${index + 1}/${totalTabs}: ${tab.title || 'Untitled'} (ID: ${tab.id})`);
     debugLog(`Tab URL: ${tab.url || 'N/A'}`);
     debugLog(`Tab status: ${tab.status || 'unknown'}, discarded: ${tab.discarded || false}`);
+
+    let currentTab = tab;
 
     try {
       if (isRestrictedUrl(tab.url)) {
@@ -633,7 +596,6 @@ async function extractTabContents(tabs) {
         return;
       }
 
-      let currentTab = tab;
       if (tab.status === 'unloaded' || tab.discarded) {
         debugLog(`Tab ${tab.id} is unloaded/discarded, reloading...`);
         await chrome.tabs.reload(tab.id);
@@ -642,7 +604,7 @@ async function extractTabContents(tabs) {
       }
 
       debugLog(`Injecting content.js into tab ${currentTab.id}...`);
-      const results = await executeScriptWithTimeout(currentTab.id, ['content.js'], 25000);
+      const results = await executeScriptWithTimeout(currentTab.id, ['content.js'], 8000);
       debugLog(`Script injection completed for tab ${currentTab.id}`);
 
       if (results && results[0] && results[0].result) {
@@ -650,18 +612,16 @@ async function extractTabContents(tabs) {
         debugLog(`Tab ${index + 1} extracted: ${contentLength} characters`);
         contents[index] = { title: currentTab.title, url: currentTab.url, content: results[0].result };
       } else {
-        debugLog(`Tab ${index + 1} returned no content, trying fallback...`, 'warn');
-        const fallbackContent = await extractFallbackContent(currentTab.id);
-        debugLog(`Fallback extracted: ${fallbackContent.length} characters`);
-        contents[index] = { title: currentTab.title, url: currentTab.url, content: fallbackContent };
+        debugLog(`Tab ${index + 1} returned no content`, 'warn');
+        contents[index] = { title: currentTab.title, url: currentTab.url, content: '[No content extracted]' };
       }
     } catch (error) {
-      debugLog(`Error extracting tab ${index + 1}: ${error.message}, trying fallback...`, 'error');
+      debugLog(`Error extracting tab ${index + 1}: ${error.message}`, 'error');
       if (error.message.includes('Cannot access contents')) {
         contents[index] = { title: tab.title, url: tab.url, content: '[Access denied: Chrome blocked this page. Enable "On all sites" in extension Site Access settings.]' };
       } else {
-        const fallbackContent = await extractFallbackContent(currentTab ? currentTab.id : tab.id);
-        debugLog(`Fallback extracted: ${fallbackContent.length} characters`);
+        const fallbackContent = `[Page extraction timed out. Title: ${tab.title || 'N/A'}]`;
+        debugLog(`Using metadata fallback for tab ${index + 1}`);
         contents[index] = { title: tab.title, url: tab.url, content: fallbackContent };
       }
     } finally {
@@ -671,7 +631,7 @@ async function extractTabContents(tabs) {
     }
   }
 
-  // Process tabs in batches of CONCURRENCY
+  // Process in batches of CONCURRENCY
   for (let i = 0; i < totalTabs; i += CONCURRENCY) {
     const batch = tabs.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map((tab, j) => extractSingleTab(i + j, tab)));

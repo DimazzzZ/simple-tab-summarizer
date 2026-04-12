@@ -1,56 +1,45 @@
 /**
- * Content Script for Tab Group Summarizer
+ * Content Script for Tab Group Summarizer — Fast Path Only
  * 
- * This script is injected into each tab to extract the main text content.
- * Uses a fast-path-first strategy with lightweight fallbacks.
+ * Optimized for speed: uses textContent (no layout-triggering innerText),
+ * stops early after collecting enough content, and avoids heavy DOM scans.
  * 
- * Optimizations:
- * - Fast extraction: stops after finding the first good content block
- * - Domain-aware extraction (GitHub, docs, landing pages)
- * - Aggressive boilerplate removal
- * - Lower character cap to reduce token costs
- * - Lightweight metadata fallback for timeout-heavy pages
+ * Strategy:
+ * 1. Domain-specific extraction (GitHub, etc.)
+ * 2. Fast targeted selectors with textContent
+ * 3. Metadata fallback (title, meta, headings, first paragraphs)
  */
 
 (function() {
   'use strict';
 
   const MAX_CHARS = 4000;
-  const MIN_GOOD_CONTENT = 200; // chars needed to consider extraction "good"
+  const MIN_GOOD_CONTENT = 150;
 
   /**
-   * Main entry: extract content using the best available strategy
+   * Main entry
    */
   function extractContent() {
     const hostname = window.location.hostname || '';
 
-    // Domain-specific extraction
+    // Domain-specific
     if (hostname.includes('github.com')) {
-      const ghContent = extractGitHubContent();
-      if (ghContent.length > MIN_GOOD_CONTENT) return cleanContent(ghContent);
+      const gh = extractGitHub();
+      if (gh.length > MIN_GOOD_CONTENT) return truncate(gh);
     }
 
-    // Fast path: try targeted selectors, stop at first good match
-    const fastResult = extractFastPath();
-    if (fastResult.length > MIN_GOOD_CONTENT) {
-      return cleanContent(fastResult);
-    }
+    // Fast path: try article/main with textContent
+    const fast = extractFast();
+    if (fast.length > MIN_GOOD_CONTENT) return truncate(fast);
 
-    // Slow path: broader extraction
-    const slowResult = extractSlowPath();
-    if (slowResult.length > MIN_GOOD_CONTENT) {
-      return cleanContent(slowResult);
-    }
-
-    // Last resort: metadata + headings
-    return cleanContent(extractMetadataFallback());
+    // Fallback: metadata + headings + first paragraphs
+    return truncate(extractMetadata());
   }
 
   /**
-   * Fast path: use querySelector (single match) for top selectors
-   * Stops as soon as we find enough content
+   * Fast extraction using textContent (no layout recalc)
    */
-  function extractFastPath() {
+  function extractFast() {
     const selectors = [
       'article',
       'main',
@@ -68,98 +57,46 @@
       '#content'
     ];
 
-    for (const selector of selectors) {
+    for (const sel of selectors) {
       try {
-        const el = document.querySelector(selector);
+        const el = document.querySelector(sel);
         if (el) {
-          const text = el.innerText || '';
+          const text = el.textContent || '';
           if (text.trim().length > MIN_GOOD_CONTENT) {
             return text;
           }
         }
-      } catch (e) {
-        // Selector might be invalid, skip
-      }
+      } catch (e) {}
     }
-
     return '';
   }
 
   /**
-   * Slow path: broader extraction using querySelectorAll
-   * but limited to top 3 matches per selector
+   * GitHub-specific: repo info + README
    */
-  function extractSlowPath() {
-    const selectors = [
-      'article',
-      'main',
-      '[role="main"]',
-      '.post',
-      '.article',
-      '.entry',
-      '.field-body',
-      '.text-content'
-    ];
-
-    for (const selector of selectors) {
-      try {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          const texts = Array.from(elements)
-            .slice(0, 3) // limit to top 3 matches
-            .map(el => el.innerText || '')
-            .filter(text => text.trim().length > 50)
-            .join('\n\n');
-          
-          if (texts.length > MIN_GOOD_CONTENT) {
-            return texts;
-          }
-        }
-      } catch (e) {
-        // Skip invalid selectors
-      }
-    }
-
-    return '';
-  }
-
-  /**
-   * GitHub-specific extraction: prioritize README, repo info
-   */
-  function extractGitHubContent() {
+  function extractGitHub() {
     const parts = [];
 
-    // Repo name and description
     try {
-      const repoName = document.querySelector('[itemprop="name"] a, [itemprop="name"]');
-      if (repoName) {
-        parts.push('Repository: ' + repoName.innerText.trim());
-      }
+      const name = document.querySelector('[itemprop="name"] a, [itemprop="name"]');
+      if (name) parts.push('Repo: ' + name.textContent.trim());
     } catch (e) {}
 
     try {
-      const description = document.querySelector('[itemprop="description"]');
-      if (description) {
-        parts.push('Description: ' + description.innerText.trim());
-      }
+      const desc = document.querySelector('[itemprop="description"]');
+      if (desc) parts.push('Description: ' + desc.textContent.trim());
     } catch (e) {}
 
-    // Topics/tags
     try {
       const topics = document.querySelector('.topics-list');
-      if (topics) {
-        parts.push('Topics: ' + topics.innerText.trim().replace(/\s+/g, ', '));
-      }
+      if (topics) parts.push('Topics: ' + topics.textContent.trim().replace(/\s+/g, ', '));
     } catch (e) {}
 
-    // README content
     try {
       const readme = document.querySelector('#readme article, .markdown-body');
       if (readme) {
-        const readmeText = readme.innerText.trim();
-        if (readmeText.length > 50) {
-          parts.push('README:\n' + readmeText);
-        }
+        const t = readme.textContent.trim();
+        if (t.length > 50) parts.push('README:\n' + t);
       }
     } catch (e) {}
 
@@ -167,59 +104,46 @@
   }
 
   /**
-   * Lightweight fallback: extract metadata, headings, and first paragraphs
-   * Used when normal extraction fails or times out
+   * Metadata fallback: title, meta, headings, first paragraphs
    */
-  function extractMetadataFallback() {
+  function extractMetadata() {
     const parts = [];
 
-    // Page title
     try {
-      const title = document.title || '';
-      if (title) parts.push('Title: ' + title);
+      if (document.title) parts.push('Title: ' + document.title);
     } catch (e) {}
 
-    // Meta description
     try {
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc && metaDesc.content) {
-        parts.push('Description: ' + metaDesc.content);
-      }
+      const meta = document.querySelector('meta[name="description"]');
+      if (meta && meta.content) parts.push('Description: ' + meta.content);
     } catch (e) {}
 
-    // OG description
     try {
-      const ogDesc = document.querySelector('meta[property="og:description"]');
-      if (ogDesc && ogDesc.content) {
-        parts.push('OG Description: ' + ogDesc.content);
-      }
+      const og = document.querySelector('meta[property="og:description"]');
+      if (og && og.content) parts.push('OG: ' + og.content);
     } catch (e) {}
 
-    // All headings
     try {
       const headings = document.querySelectorAll('h1, h2, h3');
       if (headings.length > 0) {
-        const headingTexts = Array.from(headings)
-          .slice(0, 15)
-          .map(h => h.innerText.trim())
-          .filter(t => t.length > 0);
-        if (headingTexts.length > 0) {
-          parts.push('Headings:\n' + headingTexts.map((h, i) => `${i + 1}. ${h}`).join('\n'));
+        const hTexts = [];
+        for (let i = 0; i < Math.min(headings.length, 12); i++) {
+          const t = headings[i].textContent.trim();
+          if (t) hTexts.push(t);
         }
+        if (hTexts.length > 0) parts.push('Headings:\n' + hTexts.map((h, i) => `${i + 1}. ${h}`).join('\n'));
       }
     } catch (e) {}
 
-    // First few paragraphs
     try {
-      const paragraphs = document.querySelectorAll('p, .markdown-body p, article p');
-      if (paragraphs.length > 0) {
-        const paraTexts = Array.from(paragraphs)
-          .slice(0, 8)
-          .map(p => p.innerText.trim())
-          .filter(t => t.length > 30);
-        if (paraTexts.length > 0) {
-          parts.push('Content:\n' + paraTexts.join('\n\n'));
+      const paras = document.querySelectorAll('p');
+      if (paras.length > 0) {
+        const pTexts = [];
+        for (let i = 0; i < Math.min(paras.length, 6); i++) {
+          const t = paras[i].textContent.trim();
+          if (t.length > 20) pTexts.push(t);
         }
+        if (pTexts.length > 0) parts.push('Content:\n' + pTexts.join('\n\n'));
       }
     } catch (e) {}
 
@@ -227,27 +151,20 @@
   }
 
   /**
-   * Clean and normalize extracted content
+   * Clean and truncate text
    */
-  function cleanContent(text) {
+  function truncate(text) {
     if (!text) return '';
-
     return text
-      // Remove excessive whitespace
       .replace(/\n{3,}/g, '\n\n')
-      // Remove lines that are just whitespace
       .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      // Remove duplicate consecutive lines
-      .filter((line, i, arr) => i === 0 || line !== arr[i - 1])
-      // Remove very short lines that are likely UI noise
-      .filter(line => line.length < 3 || /[a-zA-Z0-9]{3,}/.test(line))
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+      .filter((l, i, a) => i === 0 || l !== a[i - 1])
+      .filter(l => l.length < 3 || /[a-zA-Z0-9]{3,}/.test(l))
       .join('\n')
-      // Limit to reasonable length
       .substring(0, MAX_CHARS);
   }
 
-  // Extract and return the content
   return extractContent();
 })();
