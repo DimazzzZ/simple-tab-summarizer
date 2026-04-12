@@ -8,15 +8,13 @@
     "tabs",
     "scripting",
     "storage",
-    "webNavigation",
     "readingList",
     "sidePanel"
   ],
   "host_permissions": [
     "<all_urls>",
     "https://chatgpt.com/*",
-    "https://auth.openai.com/*",
-    "https://api.openai.com/*"
+    "https://auth.openai.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

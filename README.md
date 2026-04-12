@@ -25,16 +25,22 @@ A Chrome Extension (Manifest V3) that reads the content of all tabs within a spe
 chrome-group-summarizer/
 ├── manifest.json          # Extension configuration (Manifest V3)
 ├── popup.html             # Popup UI structure
-├── popup.js               # Popup logic and event handlers
+├── popup.js               # Popup entrypoint (thin wrapper)
 ├── sidebar.html           # Sidebar panel UI structure
-├── sidebar.js             # Sidebar panel logic (mirrors popup.js)
+├── sidebar.js             # Sidebar entrypoint (thin wrapper)
+├── ui-controller.js       # Shared UI controller (common logic for popup + sidebar)
 ├── styles.css             # Shared UI styling
 ├── background.js          # Service worker (OAuth, summarization, display mode control)
-├── content.js             # Content extraction script
+├── content.js             # Fast content extraction script (textContent-based)
 ├── oauth-callback.html    # OAuth callback handler page
 ├── oauth-callback.js      # OAuth callback handler logic
 ├── icons/
-│   └── icon.svg           # SVG source icon
+│   ├── icon.svg           # SVG source icon
+│   ├── icon16.png         # Toolbar icon (16x16)
+│   ├── icon48.png         # Extension page icon (48x48)
+│   └── icon128.png        # Chrome Web Store icon (128x128)
+├── PRIVACY.md             # Privacy policy
+├── PUBLISHING_AUDIT.md    # Publishing readiness audit
 ├── .gitignore             # Git ignore rules
 └── README.md              # This file
 ```
@@ -100,10 +106,10 @@ The extension uses the OpenAI OAuth PKCE flow:
 ### Content Extraction (`content.js`)
 
 The extension injects a content script into each tab that:
-1. Tries smart selectors (`article`, `main`, `.content`, etc.)
-2. Falls back to `document.body.innerText` with cleanup
-3. Removes navigation, ads, footers, and other non-content elements
-4. Limits content to ~8,000 characters per tab
+1. Tries domain-specific extraction (e.g., GitHub repos)
+2. Falls back to fast `textContent`-based extraction from `article`, `main`, `.markdown-body` selectors
+3. Falls back further to metadata (title, meta description, headings, first paragraphs)
+4. Truncates to 4,000 characters per tab for efficiency
 
 ### Summarization (`background.js`)
 
@@ -123,17 +129,12 @@ The service worker centrally manages the display mode:
 - In **popup mode**: `chrome.action.setPopup({ popup: 'popup.html' })` and side panel is disabled
 - In **sidebar mode**: `chrome.action.setPopup({ popup: '' })` and `openPanelOnActionClick: true`
 
-### UI (`popup.html/js`, `sidebar.html/js`, `styles.css`)
+### UI Architecture
 
-The popup and sidebar panel provide:
-1. Authentication status and connect/disconnect buttons
-2. Source selection (Tab Group or Reading List)
-3. Group/page selection with Select All / Deselect All
-4. Language selector for summary output
-5. Progress bar during content extraction
-6. Loading indicator during AI processing
-7. Summary display with scrollable area
-8. Debug console toggle (default OFF)
+The popup and sidebar share a common `UIController` class (`ui-controller.js`):
+- `popup.js` and `sidebar.js` are thin entrypoints that create a controller instance with DOM references and mode-toggle behavior
+- All shared logic (auth, extraction, summarization, settings) lives in the controller
+- This eliminates duplication and ensures consistent behavior across both UIs
 
 ## Permissions Explained
 
@@ -143,7 +144,6 @@ The popup and sidebar panel provide:
 | `tabs` | Query and manage tabs |
 | `scripting` | Inject content extraction script into tabs |
 | `storage` | Store OAuth tokens, display mode, debug settings, and language preference |
-| `webNavigation` | Support OAuth callback interception |
 | `readingList` | Access Chrome Reading List entries (read-only) |
 | `sidePanel` | Enable sidebar panel display mode |
 | `<all_urls>` | Access content on any page for summarization |
@@ -161,6 +161,10 @@ The popup and sidebar panel provide:
 | Reading List empty | Add pages to your Reading List first (right-click page → "Add to Reading List") |
 | Sidebar not showing | Click the 📌 Sidebar button in the popup to switch to sidebar mode |
 | Summary seems incorrect | Try a different language or check the debug console for API errors |
+
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) for details on data collection, usage, and handling.
 
 ## License
 
