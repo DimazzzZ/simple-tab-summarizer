@@ -169,6 +169,181 @@ export class UIController {
       await this.saveSetting('summaryLanguage', dom.languageSelect.value);
       this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`);
     });
+
+    // Setup tab lifecycle listeners for auto-refreshing the Select Pages list
+    this.setupTabLifecycleListeners();
+    // Setup reading list lifecycle listeners for auto-refreshing the Reading List
+    this.setupReadingListLifecycleListeners();
+  }
+
+  // Reading list lifecycle listeners to keep Reading List in sync
+  setupReadingListLifecycleListeners() {
+    this.removeReadingListLifecycleListeners();
+
+    this._onReadingListAdded = () => {
+      if (this.currentSource === 'readingList') {
+        this.debouncedRefreshReadingList();
+      }
+    };
+
+    this._onReadingListRemoved = () => {
+      if (this.currentSource === 'readingList') {
+        this.debouncedRefreshReadingList();
+      }
+    };
+
+    this._onReadingListUpdated = () => {
+      if (this.currentSource === 'readingList') {
+        this.debouncedRefreshReadingList();
+      }
+    };
+
+    if (chrome.readingList?.onEntryAdded) {
+      chrome.readingList.onEntryAdded.addListener(this._onReadingListAdded);
+    }
+    if (chrome.readingList?.onEntryRemoved) {
+      chrome.readingList.onEntryRemoved.addListener(this._onReadingListRemoved);
+    }
+    if (chrome.readingList?.onEntryUpdated) {
+      chrome.readingList.onEntryUpdated.addListener(this._onReadingListUpdated);
+    }
+  }
+
+  removeReadingListLifecycleListeners() {
+    if (this._onReadingListAdded && chrome.readingList?.onEntryAdded) {
+      chrome.readingList.onEntryAdded.removeListener(this._onReadingListAdded);
+    }
+    if (this._onReadingListRemoved && chrome.readingList?.onEntryRemoved) {
+      chrome.readingList.onEntryRemoved.removeListener(this._onReadingListRemoved);
+    }
+    if (this._onReadingListUpdated && chrome.readingList?.onEntryUpdated) {
+      chrome.readingList.onEntryUpdated.removeListener(this._onReadingListUpdated);
+    }
+  }
+
+  debouncedRefreshReadingList() {
+    if (this._readingListRefreshTimer) {
+      clearTimeout(this._readingListRefreshTimer);
+    }
+    this._readingListRefreshTimer = setTimeout(() => {
+      this.refreshReadingListEntries();
+    }, 200);
+  }
+
+  async refreshReadingListEntries() {
+    if (!chrome.readingList) return;
+
+    try {
+      // Preserve selected URLs for stable selection across changes
+      const selectedUrls = new Set(
+        this.readingListEntries
+          .filter((_, i) => this.selectedReadingListIds.has(i))
+          .map(e => e.url)
+      );
+
+      const entries = await chrome.readingList.query({});
+      this.readingListEntries = entries;
+
+      // Rebuild selectedReadingListIds based on URLs that still exist
+      this.selectedReadingListIds.clear();
+      entries.forEach((entry, index) => {
+        if (selectedUrls.has(entry.url)) {
+          this.selectedReadingListIds.add(index);
+        }
+      });
+
+      // Only re-render if we're still on reading list source
+      if (this.currentSource === 'readingList') {
+        this.renderReadingList();
+      }
+      this.updateButtonsState();
+
+      this.debugLog(`Refreshed reading list: ${entries.length} entries`);
+    } catch (error) {
+      this.debugLog(`Error refreshing reading list: ${error.message}`, 'error');
+    }
+  }
+
+  // Tab lifecycle listeners to keep Select Pages list in sync
+  setupTabLifecycleListeners() {
+    // Remove any existing listeners first (avoid duplicates across popup openings)
+    this.removeTabLifecycleListeners();
+
+    this._onTabRemoved = () => {
+      if (this.currentSource === 'tabGroup' && this.selectedGroupId !== null) {
+        this.debouncedRefreshSelectedGroup();
+      }
+    };
+
+    this._onTabAttached = () => {
+      if (this.currentSource === 'tabGroup' && this.selectedGroupId !== null) {
+        this.debouncedRefreshSelectedGroup();
+      }
+    };
+
+    this._onTabDetached = () => {
+      if (this.currentSource === 'tabGroup' && this.selectedGroupId !== null) {
+        this.debouncedRefreshSelectedGroup();
+      }
+    };
+
+    this._onTabUpdated = (tabId, changeInfo) => {
+      if (this.currentSource === 'tabGroup' && this.selectedGroupId !== null) {
+        // Only refresh if groupId changed or URL/title changed for a tab in our group
+        if (changeInfo.groupId !== undefined || changeInfo.url || changeInfo.title) {
+          this.debouncedRefreshSelectedGroup();
+        }
+      }
+    };
+
+    chrome.tabs.onRemoved.addListener(this._onTabRemoved);
+    chrome.tabs.onAttached.addListener(this._onTabAttached);
+    chrome.tabs.onDetached.addListener(this._onTabDetached);
+    chrome.tabs.onUpdated.addListener(this._onTabUpdated);
+  }
+
+  removeTabLifecycleListeners() {
+    if (this._onTabRemoved) chrome.tabs.onRemoved.removeListener(this._onTabRemoved);
+    if (this._onTabAttached) chrome.tabs.onAttached.removeListener(this._onTabAttached);
+    if (this._onTabDetached) chrome.tabs.onDetached.removeListener(this._onTabDetached);
+    if (this._onTabUpdated) chrome.tabs.onUpdated.removeListener(this._onTabUpdated);
+  }
+
+  // Debounced refresh to avoid multiple rapid calls
+  debouncedRefreshSelectedGroup() {
+    if (this._refreshTimer) {
+      clearTimeout(this._refreshTimer);
+    }
+    this._refreshTimer = setTimeout(() => {
+      this.refreshSelectedGroupTabs();
+    }, 200);
+  }
+
+  async refreshSelectedGroupTabs() {
+    if (this.selectedGroupId === null) return;
+
+    try {
+      const tabs = await chrome.tabs.query({ groupId: this.selectedGroupId });
+      const oldTabIds = new Set(this.groupTabs.map(t => t.id));
+      const newTabIds = new Set(tabs.map(t => t.id));
+
+      this.groupTabs = tabs;
+
+      // Remove selected IDs that no longer exist
+      for (const id of this.selectedTabIds) {
+        if (!newTabIds.has(id)) {
+          this.selectedTabIds.delete(id);
+        }
+      }
+
+      // Re-render the list
+      this.renderPagesList();
+      this.updateButtonsState();
+
+      this.debugLog(`Refreshed group tabs: ${tabs.length} tabs (was ${oldTabIds.size})`);
+    } catch (error) {
+      this.debugLog(`Error refreshing group tabs: ${error.message}`, 'error');
+    }
   }
 
   // ============================================
@@ -522,6 +697,7 @@ export class UIController {
       this.updateButtonsState();
     } else if (this.currentSource === 'readingList') {
       this.dom.groupSection.classList.add('hidden');
+      this.dom.pagesSection.classList.add('hidden');
       this.loadReadingList();
     }
   }
