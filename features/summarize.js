@@ -39,7 +39,8 @@ export async function handleSummarize(ctx) {
   }
 
   const summaryLanguage = dom.languageSelect.value || 'English';
-  debugLog(`Starting summarization for ${itemCount} ${source} items in ${summaryLanguage}`);
+  const summaryLevel = dom.summaryLevelSelect?.value || 'short';
+  debugLog(`Starting summarization for ${itemCount} ${source} items in ${summaryLanguage} (${summaryLevel})`);
 
   showLoading(dom);
   hideError(dom);
@@ -82,7 +83,8 @@ export async function handleSummarize(ctx) {
       action: 'summarize',
       contents,
       tabCount: contents.length,
-      language: summaryLanguage
+      language: summaryLanguage,
+      summaryLevel
     });
 
     if (summary.error) {
