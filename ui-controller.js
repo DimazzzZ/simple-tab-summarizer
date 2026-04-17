@@ -750,7 +750,7 @@ export class UIController {
     const fragment = document.createDocumentFragment();
 
     this.groupTabs.forEach(tab => {
-      const item = document.createElement('label');
+      const item = document.createElement('div');
       item.className = 'page-item fade-in';
 
       const checkbox = document.createElement('input');
@@ -773,8 +773,29 @@ export class UIController {
       text.textContent = tab.title || 'Untitled';
       text.title = tab.url;
 
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'page-close-btn';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.title = 'Close tab';
+      closeBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          await chrome.tabs.remove(tab.id);
+          this.debugLog(`Closed tab ${tab.id}`);
+          this.selectedTabIds.delete(tab.id);
+          this.groupTabs = this.groupTabs.filter(t => t.id !== tab.id);
+          this.renderPagesList();
+          this.updateButtonsState();
+          this.saveSharedContext();
+        } catch (err) {
+          this.debugLog(`Failed to close tab ${tab.id}: ${err.message}`, 'error');
+        }
+      });
+
       item.appendChild(checkbox);
       item.appendChild(text);
+      item.appendChild(closeBtn);
       fragment.appendChild(item);
     });
 
@@ -822,7 +843,7 @@ export class UIController {
     const fragment = document.createDocumentFragment();
 
     this.readingListEntries.forEach((entry, index) => {
-      const item = document.createElement('label');
+      const item = document.createElement('div');
       item.className = 'page-item fade-in';
 
       const checkbox = document.createElement('input');
@@ -847,8 +868,30 @@ export class UIController {
       text.textContent = entry.title || entry.url;
       text.title = entry.url;
 
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'page-close-btn';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.title = 'Remove from reading list';
+      closeBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          await chrome.readingList.removeEntry({ url: entry.url });
+          this.debugLog(`Removed reading list entry: ${entry.url}`);
+          this.selectedReadingListIds.delete(index);
+          this.selectedReadingListUrls.delete(entry.url);
+          this.readingListEntries = this.readingListEntries.filter(en => en.url !== entry.url);
+          this.renderReadingList();
+          this.updateButtonsState();
+          this.saveSharedContext();
+        } catch (err) {
+          this.debugLog(`Failed to remove reading list entry: ${err.message}`, 'error');
+        }
+      });
+
       item.appendChild(checkbox);
       item.appendChild(text);
+      item.appendChild(closeBtn);
       fragment.appendChild(item);
     });
 

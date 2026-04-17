@@ -533,6 +533,36 @@ select:hover:not(:focus) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Close button for tabs/reading list rows */
+.page-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  margin-left: var(--spacing-sm);
+}
+
+.page-close-btn:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.page-close-btn:active {
+  transform: scale(0.9);
 }
 
 /* ============================================
