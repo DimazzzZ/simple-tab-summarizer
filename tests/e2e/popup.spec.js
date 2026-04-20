@@ -151,6 +151,22 @@ test.describe('Simple Tab Summarizer - Button Coverage', () => {
       await expect(copyBtn).toContainText('Copy');
     });
 
+    test('expand summary button exists', async ({ page }) => {
+      await page.goto(`file://${EXTENSION_PATH}/popup.html`);
+      await page.waitForLoadState('load');
+      
+      const expandBtn = page.locator('#expand-summary-btn');
+      await expect(expandBtn).toBeAttached();
+      await expect(expandBtn).toContainText('Expand');
+    });
+
+    test('summary overlay script exists', async () => {
+      // Verify the overlay script file exists (it's injected into tabs, not loaded in popup)
+      const fs = await import('fs/promises');
+      const overlayPath = path.resolve(EXTENSION_PATH, 'render/summary-overlay.js');
+      await fs.access(overlayPath);
+    });
+
     test('select all and deselect all buttons exist', async ({ page }) => {
       await page.goto(`file://${EXTENSION_PATH}/popup.html`);
       await page.waitForLoadState('load');

@@ -37,6 +37,7 @@ export class UIController {
     this._readingListCleanup = null;
     this._rlRefresh = null;
     this._refreshTimer = null;
+    this._summaryExpanded = false;
   }
 
   debugLog(message, type = 'info') {
@@ -168,6 +169,7 @@ export class UIController {
     if (dom.rlDeselectAllBtn) dom.rlDeselectAllBtn.addEventListener('click', () => this.handleDeselectAll());
     dom.summarizeBtn.addEventListener('click', () => this.handleSummarize());
     if (dom.copySummaryBtn) dom.copySummaryBtn.addEventListener('click', () => this.handleCopySummary());
+    if (dom.expandSummaryBtn) dom.expandSummaryBtn.addEventListener('click', () => this.handleToggleExpand());
     dom.clearDebugBtn.addEventListener('click', () => { dom.debugConsole.innerHTML = ''; this.debugLog('Debug console cleared'); });
     dom.debugToggle.addEventListener('change', async () => { this.debugEnabled = dom.debugToggle.checked; await this.saveSetting('debugEnabled', this.debugEnabled); this.updateDebugVisibility(); this.debugLog(`Debug console ${this.debugEnabled ? 'enabled' : 'disabled'}`); });
     dom.languageSelect.addEventListener('change', async () => { await this.saveSetting('summaryLanguage', dom.languageSelect.value); this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`); });
@@ -292,6 +294,58 @@ export class UIController {
     } catch (error) { this.debugLog(`Failed to copy: ${error.message}`, 'error'); }
   }
 
+  async handleToggleExpand() {
+    const text = this.dom.summaryContent.textContent;
+    if (!text) return;
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!activeTab) { this.debugLog('No active tab found', 'warn'); return; }
+      const restrictedPrefixes = ['chrome://', 'chrome-extension://', 'edge://', 'about:', 'file://', 'devtools://'];
+      const isRestricted = activeTab.url && restrictedPrefixes.some(prefix => activeTab.url.startsWith(prefix));
+      if (isRestricted) {
+        this.debugLog(`Cannot inject overlay into restricted page: ${activeTab.url}`, 'warn');
+        const urlPreview = activeTab.url.length > 60 ? activeTab.url.substring(0, 60) + '...' : activeTab.url;
+        this.showError(`Cannot display summary overlay on this page. Chrome blocks extensions on restricted pages (e.g., chrome://, about:, chrome-extension://, file://). Current page: ${urlPreview}. Open a regular website (https://...) and try again.`);
+        return;
+      }
+      // Inject summary text into the page, then run the overlay script
+      await chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        func: (summary) => { window.__tabSummarizerSummary = summary; },
+        args: [text]
+      });
+      await chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        files: ['render/summary-overlay.js']
+      });
+      this.debugLog(`Summary overlay injected into tab ${activeTab.id}`);
+    } catch (error) {
+      this.debugLog(`Failed to inject summary overlay: ${error.message}`, 'error');
+      this.showError('Failed to open summary reader. Make sure the extension has "On all sites" access.');
+    }
+  }
+
+  async _closeSummaryOverlayInTab() {
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!activeTab) return;
+      await chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        func: () => {
+          const overlay = document.getElementById('tab-summarizer-overlay');
+          if (overlay) overlay.remove();
+        }
+      });
+      this.debugLog('Summary overlay removed from tab');
+    } catch (error) {
+      this.debugLog(`Failed to remove summary overlay: ${error.message}`, 'error');
+    }
+  }
+
+  _resetExpandState() {
+    this._closeSummaryOverlayInTab();
+  }
+
   async handleSummarize() {
     await handleSummarize({
       source: this.currentSource, dom: this.dom, groupTabs: this.groupTabs,
@@ -303,8 +357,8 @@ export class UIController {
 
   showLoading() { showLoading(this.dom); }
   hideLoading() { hideLoading(this.dom); }
-  showSummary(text) { showSummary(this.dom, text); this._saveSessionState(); }
-  hideSummary() { hideSummary(this.dom); this._saveSessionState(); }
+  showSummary(text) { this._resetExpandState(); showSummary(this.dom, text); this._saveSessionState(); }
+  hideSummary() { this._resetExpandState(); hideSummary(this.dom); this._saveSessionState(); }
   showError(message) { showError(this.dom, message); this.debugLog(`Error: ${message}`, 'error'); this._saveSessionState(); }
   hideError() { hideError(this.dom); this._saveSessionState(); }
   updateProgress(current, total) { updateProgress(this.dom, current, total); }
