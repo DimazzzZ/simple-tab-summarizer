@@ -1,6 +1,6 @@
 # Privacy Policy — Simple Tab Summarizer
 
-**Last updated:** April 12, 2026
+**Last updated:** April 20, 2026
 
 ## Overview
 
@@ -19,7 +19,7 @@ Simple Tab Summarizer is a Chrome Extension that summarizes web page content usi
 - **Where it is stored:** Tokens are stored only in your local browser storage. They are never transmitted to any server other than OpenAI's authentication servers.
 
 ### Settings
-- **What is collected:** Your display mode preference (popup vs. sidebar), debug console setting, and selected summary language.
+- **What is collected:** Your display mode preference (popup vs. sidebar), debug console setting, selected summary language, and summary verbosity level (short, medium, or detailed).
 - **How it is used:** These settings are stored locally to persist your preferences across browser sessions.
 
 ## Data Sharing

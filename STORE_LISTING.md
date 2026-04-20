@@ -11,10 +11,12 @@ Simple Tab Summarizer uses AI to summarize web pages, tab groups, and reading li
 ### Features
 
 • **Current Tab Summary** — Get a quick summary of the active tab with one click
-• **Tab Group Summarization** — Select and summarize all tabs in a group at once
-• **Reading List Summarization** — Summarize pages saved to Chrome's Reading List
+• **Tab Group Summarization** — Select and summarize all tabs in a group at once with live auto-refresh
+• **Reading List Summarization** — Summarize pages saved to Chrome's Reading List with live auto-refresh
+• **Configurable Verbosity** — Choose between Short, Medium, or Detailed summary levels
+• **Expand Summary** — View summaries in a full-page overlay for better readability
 • **40+ Languages** — Choose your summary language from Arabic to Vietnamese
-• **Popup or Sidebar** — Use as a compact popup or a persistent sidebar panel
+• **Popup or Sidebar** — Use as a compact popup or a persistent sidebar panel with shared session state
 • **Free to Use** — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
 ### How to Use
@@ -22,8 +24,8 @@ Simple Tab Summarizer uses AI to summarize web pages, tab groups, and reading li
 1. **Group your tabs** (right-click a tab → "Add tab to new group")
 2. **Click the extension icon** to open the popup
 3. **Select a tab group** or switch to Reading List mode
-4. **Choose your language** and click "Summarize Selected"
-5. **Review the summary** — copy it to clipboard with one click
+4. **Choose your language and summary level** and click "Summarize Selected"
+5. **Review the summary** — view it in the popup or expand it to a full-page overlay
 
 ### Privacy
 
