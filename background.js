@@ -355,7 +355,7 @@ async function startOAuthFlow() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'summarize') {
-    handleSummarizeRequest(message.contents, message.tabCount, message.language)
+    handleSummarizeRequest(message.contents, message.tabCount, message.language, message.summaryLevel)
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ error: error.message }));
     return true;
@@ -439,7 +439,7 @@ async function setDisplayMode(mode) {
 // Summarization Logic
 // ============================================
 
-async function handleSummarizeRequest(contents, tabCount, language = 'English') {
+async function handleSummarizeRequest(contents, tabCount, language = 'English', summaryLevel = 'short') {
   try {
     const accessToken = await getAccessToken();
     if (!accessToken) {
@@ -448,7 +448,7 @@ async function handleSummarizeRequest(contents, tabCount, language = 'English') 
 
     const userMessage = buildUserMessage(contents, tabCount);
     const truncatedMessage = truncateMessage(userMessage, 40000);
-    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language);
+    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language, summaryLevel);
     
     return { text: summary, error: null };
   } catch (error) {
@@ -479,7 +479,7 @@ function truncateMessage(message, maxLength) {
   return message.substring(0, maxLength) + '\n[content clipped]';
 }
 
-async function callOpenAIAPI(message, tabCount, accessToken, language = 'English') {
+async function callOpenAIAPI(message, tabCount, accessToken, language = 'English', summaryLevel = 'short') {
   const accountId = await getAccountId();
   console.log('[API] Using account_id:', accountId);
   
@@ -494,9 +494,18 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
   }
   
   const langInstruction = `Output must be in ${language}.`;
-  const instructions = tabCount <= 1
-    ? `${langInstruction} Summarize the page content in ONE short paragraph (max 100 words). Return only the paragraph — no headings, no bullets, no extra text.`
-    : `${langInstruction} For each page section marked "=== PAGE N ===", write ONE short paragraph (max 80 words) summarizing that page. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.`;
+  const levelInstructions = {
+    short: tabCount <= 1
+      ? 'Summarize the page content in ONE very concise paragraph (max 80 words). Focus only on the core message. Return only the paragraph — no headings, no bullets, no extra text.'
+      : 'For each page section marked "=== PAGE N ===", write ONE very concise paragraph (max 60 words) summarizing that page. Focus only on the core message. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.',
+    medium: tabCount <= 1
+      ? 'Summarize the page content in ONE paragraph (max 120 words). Cover the main points and key takeaways. Return only the paragraph — no headings, no bullets, no extra text.'
+      : 'For each page section marked "=== PAGE N ===", write ONE paragraph (max 100 words) summarizing that page. Cover the main points and key takeaways. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.',
+    detailed: tabCount <= 1
+      ? 'Provide a detailed summary of the page content (max 300 words). Cover all important points, key details, and notable context. You may use multiple paragraphs. Return only the summary — no headings, no bullets, no extra text.'
+      : 'For each page section marked "=== PAGE N ===", provide a detailed summary (max 250 words) covering all important points and key details. You may use multiple paragraphs per section. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.'
+  };
+  const instructions = `${langInstruction} ${levelInstructions[summaryLevel] || levelInstructions.short}`;
   
   const body = JSON.stringify({
     model: OPENAI_MODEL,

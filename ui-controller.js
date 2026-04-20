@@ -52,11 +52,12 @@ export class UIController {
   }
 
   async loadSettings() {
-    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage']);
+    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage', 'summaryLevel']);
     this.debugEnabled = result.debugEnabled || false;
     this.dom.debugToggle.checked = this.debugEnabled;
     this.updateDebugVisibility();
     if (result.summaryLanguage) this.dom.languageSelect.value = result.summaryLanguage;
+    if (result.summaryLevel) this.dom.summaryLevelSelect.value = result.summaryLevel;
     await this.updateModeToggleLabel();
     await this.loadSharedContext();
     this.setupStorageListener();
@@ -170,6 +171,7 @@ export class UIController {
     dom.clearDebugBtn.addEventListener('click', () => { dom.debugConsole.innerHTML = ''; this.debugLog('Debug console cleared'); });
     dom.debugToggle.addEventListener('change', async () => { this.debugEnabled = dom.debugToggle.checked; await this.saveSetting('debugEnabled', this.debugEnabled); this.updateDebugVisibility(); this.debugLog(`Debug console ${this.debugEnabled ? 'enabled' : 'disabled'}`); });
     dom.languageSelect.addEventListener('change', async () => { await this.saveSetting('summaryLanguage', dom.languageSelect.value); this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`); });
+    dom.summaryLevelSelect.addEventListener('change', async () => { await this.saveSetting('summaryLevel', dom.summaryLevelSelect.value); this.debugLog(`Summary level changed to: ${dom.summaryLevelSelect.value}`); });
     this._tabCleanup = setupTabLifecycleListeners(this, () => this.debouncedRefreshSelectedGroup());
     this._readingListCleanup = setupReadingListLifecycleListeners(this, () => this.debouncedRefreshReadingList());
   }
