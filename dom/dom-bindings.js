@@ -14,7 +14,7 @@ const DOM_IDS = [
   'summary-level-select', 'language-select', 'summarize-btn',
   'debug-console', 'debug-section', 'debug-toggle', 'clear-debug-btn',
   'loading-section', 'loading-text', 'progress-fill', 'progress-text',
-  'summary-section', 'summary-content', 'copy-summary-btn',
+  'summary-section', 'summary-content', 'expand-summary-btn', 'copy-summary-btn',
   'error-section', 'error-message'
 ];
 

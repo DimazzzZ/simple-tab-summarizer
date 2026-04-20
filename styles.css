@@ -874,6 +874,11 @@ select:hover:not(:focus) {
   word-wrap: break-word;
   scrollbar-width: thin;
   scrollbar-color: var(--color-outline) transparent;
+  transition: max-height var(--transition-slow);
+}
+
+.summary-box.expanded {
+  max-height: none;
 }
 
 .summary-box::-webkit-scrollbar {
