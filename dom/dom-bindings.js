@@ -11,7 +11,7 @@ const DOM_IDS = [
   'pages-section', 'pages-list',
   'select-all-btn', 'deselect-all-btn',
   'rl-select-all-btn', 'rl-deselect-all-btn',
-  'language-select', 'summarize-btn',
+  'summary-level-select', 'language-select', 'summarize-btn',
   'debug-console', 'debug-section', 'debug-toggle', 'clear-debug-btn',
   'loading-section', 'loading-text', 'progress-fill', 'progress-text',
   'summary-section', 'summary-content', 'copy-summary-btn',

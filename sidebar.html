@@ -29,9 +29,18 @@
 
     <!-- Configuration Card -->
     <div class="card">
-      <div class="form-group">
-        <label for="language-select">Summary Language</label>
-        <select id="language-select" class="language-select">
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label for="summary-level-select">Summary Level</label>
+          <select id="summary-level-select" class="summary-level-select">
+            <option value="short" selected>Short</option>
+            <option value="medium">Medium</option>
+            <option value="detailed">Detailed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="language-select">Summary Language</label>
+          <select id="language-select" class="language-select">
           <option value="Arabic">Arabic</option>
           <option value="Bengali">Bengali</option>
           <option value="Bulgarian">Bulgarian</option>
@@ -74,6 +83,7 @@
           <option value="Urdu">Urdu</option>
           <option value="Vietnamese">Vietnamese</option>
         </select>
+        </div>
       </div>
       <div class="form-group">
         <label for="source-select">Summarize From</label>

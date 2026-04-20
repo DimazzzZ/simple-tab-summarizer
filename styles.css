@@ -379,6 +379,18 @@ body.sidebar-mode .action-bar {
   margin-bottom: 0;
 }
 
+/* Two-column form row */
+.form-row.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.form-row.two-col .form-group {
+  margin-bottom: 0;
+}
+
 .form-group label {
   display: block;
   font-size: 12px;
