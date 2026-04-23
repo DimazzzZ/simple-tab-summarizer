@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Simple Tab Summarizer",
   "description": "Free AI summarizer for tabs, tab groups, and reading lists",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "permissions": [
     "tabGroups",
     "tabs",

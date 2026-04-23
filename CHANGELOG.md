@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-04-23
+
+### Fixed
+- **Packaging Bug**: Fixed CI packaging script that omitted critical runtime module directories (`dom/`, `features/`, `constants/`, `sync/`, `render/`, `lifecycle/`, `utils/`), which caused "file not found" errors and non-functional Connect button.
+- **Release Validation**: Added pre-packaging and post-packaging validation steps to GitHub Actions workflow to ensure all required files are included in the release ZIP.
+
+### Changed
+- **scripts/package-extension.sh**: Updated to copy all runtime module directories into the build output.
+- **.github/workflows/release.yml**: Added validation checks for required files before packaging and verification of ZIP contents after packaging.
+
+---
+
 ## [1.1.0] - 2026-04-20
 
 ### Added

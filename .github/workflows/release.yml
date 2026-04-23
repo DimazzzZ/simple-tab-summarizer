@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+# Opt into Node 24 for JavaScript actions
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   checks:
     uses: ./.github/workflows/reusable-checks.yml
@@ -19,12 +23,12 @@ jobs:
     needs: checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Validate version matches manifest
         run: |
@@ -39,10 +43,52 @@ jobs:
       - name: Install zip utility
         run: sudo apt-get install -y zip
 
+      - name: Validate required files before packaging
+        run: |
+          echo "Validating required files..."
+          REQUIRED_FILES="manifest.json background.js content.js popup.html popup.js sidebar.html sidebar.js ui-controller.js styles.css LICENSE PRIVACY.md"
+          REQUIRED_DIRS="constants dom features lifecycle render sync utils icons"
+          for file in $REQUIRED_FILES; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          for dir in $REQUIRED_DIRS; do
+            if [ ! -d "$dir" ]; then
+              echo "❌ Missing required directory: $dir"
+              exit 1
+            fi
+          done
+          # Check critical module files
+          CRITICAL_MODULES="dom/dom-bindings.js features/auth.js features/tab-groups.js features/summarize.js render/ui-feedback.js sync/storage-sync.js utils/debounce.js constants/ui-keys.js lifecycle/listeners.js render/summary-overlay.js"
+          for module in $CRITICAL_MODULES; do
+            if [ ! -f "$module" ]; then
+              echo "❌ Missing critical module: $module"
+              exit 1
+            fi
+          done
+          echo "✅ All required files and modules present"
+
       - name: Package extension
         run: |
           chmod +x scripts/package-extension.sh
           ./scripts/package-extension.sh "${{ inputs.version }}"
+
+      - name: Validate packaged ZIP contents
+        run: |
+          ZIP_FILE="dist/simple-tab-summarizer-v${{ inputs.version }}.zip"
+          echo "Validating ZIP contents..."
+          unzip -l "$ZIP_FILE"
+          # Check critical files exist in ZIP
+          unzip -l "$ZIP_FILE" | grep -q "dom/dom-bindings.js" || (echo "❌ dom/dom-bindings.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "features/auth.js" || (echo "❌ features/auth.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "features/tab-groups.js" || (echo "❌ features/tab-groups.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "ui-controller.js" || (echo "❌ ui-controller.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "constants/ui-keys.js" || (echo "❌ constants/ui-keys.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "sync/storage-sync.js" || (echo "❌ sync/storage-sync.js missing in ZIP" && exit 1)
+          unzip -l "$ZIP_FILE" | grep -q "render/summary-overlay.js" || (echo "❌ render/summary-overlay.js missing in ZIP" && exit 1)
+          echo "✅ ZIP validation passed"
 
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
@@ -52,11 +98,7 @@ jobs:
           retention-days: 30
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
-          files: dist/simple-tab-summarizer-v${{ inputs.version }}.zip
-          generate_release_notes: true
+        run: |
+          gh release create v${{ inputs.version }} dist/simple-tab-summarizer-v${{ inputs.version }}.zip --title "v${{ inputs.version }}" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
