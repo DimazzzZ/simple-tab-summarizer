@@ -16,7 +16,12 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
-What’s new in 1.1.0:
+What's new in 1.1.1:
+- Fixed packaging bug: all runtime module directories now included in release ZIP
+- Added release validation checks to ensure complete builds
+- Restored Connect button functionality and tabGroups permission usage
+
+What's new in 1.1.0:
 - Live auto-refresh for Tab Group and Reading List selections
 - Shared popup/sidebar context and persisted summary/error session state
 - Quick item actions: close tabs or remove Reading List entries directly in lists
@@ -38,6 +43,7 @@ https://github.com/DimazzzZ/simple-tab-summarizer
 
 Share your improvement ideas and questions here:
 https://github.com/DimazzzZ/simple-tab-summarizer/issues
+
 ### Permissions Justification
 
 | Permission | Why it's needed |

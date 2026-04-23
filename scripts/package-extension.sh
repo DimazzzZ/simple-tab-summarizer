@@ -44,6 +44,13 @@ cp "$ROOT_DIR/PRIVACY.md" "$BUILD_DIR/"
 # Copy icons directory
 cp -R "$ROOT_DIR/icons" "$BUILD_DIR/"
 
+# Copy runtime module directories
+for dir in constants dom features lifecycle render sync utils; do
+  if [ -d "$ROOT_DIR/$dir" ]; then
+    cp -R "$ROOT_DIR/$dir" "$BUILD_DIR/"
+  fi
+done
+
 # Create ZIP (manifest.json at root level)
 cd "$BUILD_DIR"
 zip -r "$DIST_DIR/$ZIP_NAME" .
