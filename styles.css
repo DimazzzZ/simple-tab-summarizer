@@ -676,6 +676,18 @@ select:hover:not(:focus) {
   border-color: var(--color-on-surface-variant);
 }
 
+.btn-stop {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+  margin-top: var(--spacing-sm);
+}
+
+.btn-stop:hover {
+  background: var(--color-error);
+  color: white;
+}
+
 /* ============================================
    Debug Section
    ============================================ */
