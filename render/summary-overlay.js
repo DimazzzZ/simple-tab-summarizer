@@ -39,6 +39,11 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(2px);
     animation: ts-fade-in 200ms ease-out;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f1f1f;
+    box-sizing: border-box;
   `;
 
   // Create dialog
@@ -55,6 +60,10 @@
     flex-direction: column;
     overflow: hidden;
     animation: ts-slide-in 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
   `;
 
   // Create header
@@ -65,6 +74,10 @@
     align-items: center;
     padding: 16px 20px;
     border-bottom: 1px solid #e8eaed;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
   `;
 
   const title = document.createElement('h2');
@@ -76,6 +89,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-family: inherit;
+    line-height: inherit;
   `;
   title.textContent = 'Summary';
 
@@ -95,6 +110,7 @@
     font-size: 18px;
     line-height: 1;
     transition: all 150ms ease;
+    font-family: inherit;
   `;
   closeBtn.innerHTML = '&#x2715;';
   closeBtn.title = 'Close';
@@ -114,6 +130,7 @@
     color: #1f1f1f;
     white-space: pre-wrap;
     word-wrap: break-word;
+    font-family: inherit;
   `;
   body.textContent = summaryText;
 
@@ -137,12 +154,18 @@
     }
   });
 
-  // Add animations
+  // Add animations and typography reset
   const style = document.createElement('style');
   style.textContent = `
     @keyframes ts-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes ts-fade-out { from { opacity: 1; } to { opacity: 0; } }
     @keyframes ts-slide-in { from { opacity: 0; transform: translateY(-20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    #tab-summarizer-overlay,
+    #tab-summarizer-overlay *,
+    #tab-summarizer-overlay *::before,
+    #tab-summarizer-overlay *::after {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
   `;
   document.head.appendChild(style);
 
