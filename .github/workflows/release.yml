@@ -98,14 +98,9 @@ jobs:
           retention-days: 30
 
       - name: Create GitHub Release
-        run: |
-          gh release create v${{ inputs.version }} dist/simple-tab-summarizer-v${{ inputs.version }}.zip --title "v${{ inputs.version }}" --notes "## Simple Tab Summarizer v${{ inputs.version }}
-
-### Chrome Web Store
-Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol)
-
----
-
-" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          printf '## Simple Tab Summarizer v%s\n\n### Chrome Web Store\nInstall the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol)\n\n---\n' "$VERSION" > release-notes.md
+          gh release create "v$VERSION" "dist/simple-tab-summarizer-v$VERSION.zip" --title "v$VERSION" --notes-file release-notes.md --generate-notes
