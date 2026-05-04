@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-04
+
+### Added
+- **Stop Summarization**: Added a Stop button to cancel ongoing summarization requests mid-flight.
+- **Dynamic Page Content Extraction**: Added async content extraction that waits up to 3 seconds for JavaScript-heavy pages (e.g., Atlassian, Google Dev Blog) to hydrate their article body before extracting text.
+- **Unicode-Safe Text Processing**: Fixed content extraction to properly handle Cyrillic, CJK, and other non-Latin text that was previously being stripped by a Latin-only filter.
+
+### Changed
+- **Summary Overlay Typography**: Enhanced font isolation in the injected summary overlay to prevent host page styles (e.g., Meduza.io) from overriding the modal's font stack.
+- **Extraction Reliability**: Both tab extraction and reading list extraction now try async extraction first, falling back to sync if it fails.
+
+### Fixed
+- **Font Inheritance in Modal**: The summary overlay now uses an explicit system font stack with `!important` scoping to prevent any host page CSS from leaking through.
+- **Cyrillic/Unicode Content Loss**: Replaced `/[a-zA-Z0-9]{3,}/` filter with Unicode-aware `/\p{L}|\p{N}/u` regex so non-Latin content is preserved during extraction.
+
+### Tests
+- Added E2E tests for the Stop button in both popup and sidebar.
+- Added unit tests for cancellation/abort behavior in summarization.
+- Added unit tests for Cyrillic, Chinese, and mixed Unicode text preservation.
+
+---
+
 ## [1.1.1] - 2026-04-23
 
 ### Fixed
