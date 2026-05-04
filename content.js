@@ -1,5 +1,5 @@
 /**
- * Content Script for Tab Group Summarizer — Fast Path Only
+ * Content Script for Tab Group Summarizer — Fast Path + Dynamic Content Support
  * 
  * Optimized for speed: uses textContent (no layout-triggering innerText),
  * stops early after collecting enough content, and avoids heavy DOM scans.
@@ -7,7 +7,8 @@
  * Strategy:
  * 1. Domain-specific extraction (GitHub, etc.)
  * 2. Fast targeted selectors with textContent
- * 3. Metadata fallback (title, meta, headings, first paragraphs)
+ * 3. Wait for dynamic content hydration (for JS-heavy sites)
+ * 4. Metadata fallback (title, meta, headings, first paragraphs)
  */
 
 (function() {
@@ -15,9 +16,11 @@
 
   const MAX_CHARS = 4000;
   const MIN_GOOD_CONTENT = 150;
+  const MAX_WAIT_MS = 3000;
+  const POLL_INTERVAL_MS = 300;
 
   /**
-   * Main entry
+   * Main entry — supports both sync and async (wait-for-content) modes
    */
   function extractContent() {
     const hostname = window.location.hostname || '';
@@ -34,6 +37,47 @@
 
     // Fallback: metadata + headings + first paragraphs
     return truncate(extractMetadata());
+  }
+
+  /**
+   * Async entry — waits for content to hydrate on dynamic pages
+   * Returns a Promise that resolves with the extracted text
+   */
+  async function extractContentAsync() {
+    const hostname = window.location.hostname || '';
+
+    // Domain-specific (sync, usually fast)
+    if (hostname.includes('github.com')) {
+      const gh = extractGitHub();
+      if (gh.length > MIN_GOOD_CONTENT) return truncate(gh);
+    }
+
+    // Fast path: try article/main with textContent
+    let fast = extractFast();
+    if (fast.length > MIN_GOOD_CONTENT) return truncate(fast);
+
+    // Wait for dynamic content to hydrate
+    const startTime = Date.now();
+    while (Date.now() - startTime < MAX_WAIT_MS) {
+      await sleep(POLL_INTERVAL_MS);
+
+      // Check if article/main now has content
+      fast = extractFast();
+      if (fast.length > MIN_GOOD_CONTENT) return truncate(fast);
+
+      // Also check body for substantial content
+      const bodyText = document.body ? (document.body.textContent || '') : '';
+      if (bodyText.trim().length > MIN_GOOD_CONTENT * 2) {
+        return truncate(bodyText);
+      }
+    }
+
+    // Fallback: metadata + headings + first paragraphs
+    return truncate(extractMetadata());
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -151,7 +195,7 @@
   }
 
   /**
-   * Clean and truncate text
+   * Clean and truncate text (Unicode-safe)
    */
   function truncate(text) {
     if (!text) return '';
@@ -161,10 +205,15 @@
       .map(l => l.trim())
       .filter(l => l.length > 0)
       .filter((l, i, a) => i === 0 || l !== a[i - 1])
-      .filter(l => l.length < 3 || /[a-zA-Z0-9]{3,}/.test(l))
+      // Keep lines with any 3+ word characters (Unicode-aware)
+      .filter(l => l.length < 3 || /\p{L}|\p{N}/u.test(l))
       .join('\n')
       .substring(0, MAX_CHARS);
   }
 
+  // Expose async version for dynamic pages
+  window.__tabSummarizerExtractAsync = extractContentAsync;
+
+  // Sync fallback for immediate extraction
   return extractContent();
 })();

@@ -43,10 +43,34 @@ export async function extractTabContents(tabs, debugLog, onProgress, onLoadingTe
       const results = await executeScriptWithTimeout(currentTab.id, ['content.js']);
       debugLog(`Script injection completed for tab ${currentTab.id}`);
 
-      if (results?.[0]?.result) {
-        const contentLength = results[0].result.length;
-        debugLog(`Tab ${index + 1} extracted: ${contentLength} characters`);
-        contents[index] = { title: currentTab.title, url: currentTab.url, content: results[0].result };
+      // Try async extraction first (waits for dynamic content)
+      let content = null;
+      try {
+        const asyncResults = await chrome.scripting.executeScript({
+          target: { tabId: currentTab.id },
+          func: async () => {
+            if (window.__tabSummarizerExtractAsync) {
+              return await window.__tabSummarizerExtractAsync();
+            }
+            return null;
+          }
+        });
+        if (asyncResults?.[0]?.result) {
+          content = asyncResults[0].result;
+          debugLog(`Tab ${index + 1} extracted (async): ${content.length} characters`);
+        }
+      } catch (e) {
+        debugLog(`Async extraction failed for tab ${index + 1}: ${e.message}`, 'warn');
+      }
+
+      // Fall back to sync result if async failed
+      if (!content && results?.[0]?.result) {
+        content = results[0].result;
+        debugLog(`Tab ${index + 1} extracted (sync): ${content.length} characters`);
+      }
+
+      if (content) {
+        contents[index] = { title: currentTab.title, url: currentTab.url, content };
       } else {
         debugLog(`Tab ${index + 1} returned no content`, 'warn');
         contents[index] = { title: currentTab.title, url: currentTab.url, content: '[No content extracted]' };
@@ -108,13 +132,37 @@ export async function extractReadingListContents(selectedEntries, debugLog, onPr
       const results = await executeScriptWithTimeout(readyTab.id, ['content.js'], Timings.READING_LIST_READY_TIMEOUT_MS);
       debugLog(`Script injection completed for tab ${readyTab.id}`);
 
+      // Try async extraction first (waits for dynamic content)
+      let content = null;
+      try {
+        const asyncResults = await chrome.scripting.executeScript({
+          target: { tabId: readyTab.id },
+          func: async () => {
+            if (window.__tabSummarizerExtractAsync) {
+              return await window.__tabSummarizerExtractAsync();
+            }
+            return null;
+          }
+        });
+        if (asyncResults?.[0]?.result) {
+          content = asyncResults[0].result;
+          debugLog(`Entry ${i + 1} extracted (async): ${content.length} characters`);
+        }
+      } catch (e) {
+        debugLog(`Async extraction failed for entry ${i + 1}: ${e.message}`, 'warn');
+      }
+
+      // Fall back to sync result if async failed
+      if (!content && results?.[0]?.result) {
+        content = results[0].result;
+        debugLog(`Entry ${i + 1} extracted (sync): ${content.length} characters`);
+      }
+
       try { await chrome.tabs.remove(readyTab.id); } catch {}
       debugLog(`Closed temp tab ${readyTab.id}`);
 
-      if (results?.[0]?.result) {
-        const contentLength = results[0].result.length;
-        debugLog(`Entry ${i + 1} extracted: ${contentLength} characters`);
-        contents.push({ title: entry.title || 'Untitled', url: entry.url, content: results[0].result });
+      if (content) {
+        contents.push({ title: entry.title || 'Untitled', url: entry.url, content });
       } else {
         debugLog(`Entry ${i + 1} returned no content`, 'warn');
         contents.push({ title: entry.title || 'Untitled', url: entry.url, content: '[No content extracted]' });

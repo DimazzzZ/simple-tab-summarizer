@@ -5,7 +5,7 @@
  * Or with a test runner like Jest/Vitest once configured.
  */
 
-// Simulate the truncate function from content.js
+// Simulate the Unicode-safe truncate function from content.js
 function truncate(text, maxChars = 4000) {
   if (!text) return '';
   return text
@@ -14,7 +14,8 @@ function truncate(text, maxChars = 4000) {
     .map(l => l.trim())
     .filter(l => l.length > 0)
     .filter((l, i, a) => i === 0 || l !== a[i - 1])
-    .filter(l => l.length < 3 || /[a-zA-Z0-9]{3,}/.test(l))
+    // Keep lines with any word characters (Unicode-aware)
+    .filter(l => l.length < 3 || /\p{L}|\p{N}/u.test(l))
     .join('\n')
     .substring(0, maxChars);
 }
@@ -61,6 +62,16 @@ assertEqual(truncate('a\na\na\nb'), 'a\nb', 'removes duplicate consecutive lines
 assertEqual(truncate('ab\ncd\nef'), 'ab\ncd\nef', 'keeps lines shorter than 3 chars (filter is l.length < 3)');
 
 assertEqual(truncate('  hello  \n  world  '), 'hello\nworld', 'trims whitespace from lines');
+
+// Unicode/Cyrillic tests
+const cyrillicText = 'Привет мир\nЭто тест на кириллице\nСтрока с русским текстом';
+assertEqual(truncate(cyrillicText), cyrillicText, 'preserves Cyrillic text');
+
+const chineseText = '你好世界\n这是一个测试\n中文文本';
+assertEqual(truncate(chineseText), chineseText, 'preserves Chinese text');
+
+const mixedText = 'Hello мир 世界\nMixed content тест';
+assertEqual(truncate(mixedText), mixedText, 'preserves mixed Unicode text');
 
 // Summary
 console.log(`\n📊 Results: ${passed} passed, ${failed} failed`);
