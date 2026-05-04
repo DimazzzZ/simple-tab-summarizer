@@ -207,6 +207,15 @@ test.describe('Simple Tab Summarizer - Button Coverage', () => {
       await expect(groupSelect).toBeAttached();
       await expect(groupSelect.locator('option').first()).toHaveText('-- Select a group --');
     });
+
+    test('stop button exists in loading section', async ({ page }) => {
+      await page.goto(`file://${EXTENSION_PATH}/popup.html`);
+      await page.waitForLoadState('load');
+      
+      const stopBtn = page.locator('#stop-btn');
+      await expect(stopBtn).toBeAttached();
+      await expect(stopBtn).toContainText('Stop');
+    });
   });
 
   test.describe('Sidebar button coverage', () => {
@@ -225,6 +234,15 @@ test.describe('Simple Tab Summarizer - Button Coverage', () => {
       
       const modeToggle = page.locator('#mode-toggle');
       await expect(modeToggle.locator('span')).toHaveText('Popup');
+    });
+
+    test('sidebar stop button exists in loading section', async ({ page }) => {
+      await page.goto(`file://${EXTENSION_PATH}/sidebar.html`);
+      await page.waitForLoadState('load');
+      
+      const stopBtn = page.locator('#stop-btn');
+      await expect(stopBtn).toBeAttached();
+      await expect(stopBtn).toContainText('Stop');
     });
   });
 });

@@ -235,6 +235,7 @@ async function exchangeCodeForTokens(code, codeVerifier) {
 // ============================================
 
 let pendingAuth = null;
+let currentSummarizationAbortController = null;
 
 async function savePendingAuth() {
   if (pendingAuth) {
@@ -265,7 +266,7 @@ async function clearPendingAuth() {
 })();
 
 // Listen for tab updates globally to catch callback even if popup closed
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   if (!changeInfo.url || !changeInfo.url.includes('localhost:1455/auth/callback')) return;
   
   // Check if we have pending auth
@@ -307,7 +308,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   
   try {
     console.log('[OAuth] Exchanging code for tokens...');
-    const creds = await exchangeCodeForTokens(code, pendingAuth.codeVerifier);
+    await exchangeCodeForTokens(code, pendingAuth.codeVerifier);
     console.log('[OAuth] Tokens stored!');
     await clearPendingAuth();
     pendingAuth = null;
@@ -395,6 +396,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(error => sendResponse({ error: error.message }));
     return true;
   }
+
+  if (message.action === 'stop_summarize') {
+    if (currentSummarizationAbortController) {
+      currentSummarizationAbortController.abort();
+      currentSummarizationAbortController = null;
+      console.log('[Summarize] Stop signal sent');
+    }
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 // ============================================
@@ -440,24 +451,34 @@ async function setDisplayMode(mode) {
 // ============================================
 
 async function handleSummarizeRequest(contents, tabCount, language = 'English', summaryLevel = 'short') {
+  currentSummarizationAbortController = new AbortController();
+  const { signal } = currentSummarizationAbortController;
+  
   try {
     const accessToken = await getAccessToken();
     if (!accessToken) {
+      currentSummarizationAbortController = null;
       return { text: null, error: 'Not connected. Please connect to ChatGPT first.' };
     }
 
-    const userMessage = buildUserMessage(contents, tabCount);
+    const userMessage = buildUserMessage(contents);
     const truncatedMessage = truncateMessage(userMessage, 40000);
-    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language, summaryLevel);
+    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language, summaryLevel, signal);
     
+    currentSummarizationAbortController = null;
     return { text: summary, error: null };
   } catch (error) {
+    currentSummarizationAbortController = null;
+    if (error.name === 'AbortError') {
+      console.log('[Summarize] Summarization was stopped');
+      return { text: null, error: 'Summarization was stopped.' };
+    }
     console.error('Summarization error:', error);
     return { text: null, error: `Failed to generate summary: ${error.message}` };
   }
 }
 
-function buildUserMessage(contents, tabCount) {
+function buildUserMessage(contents) {
   const MAX_CHARS_PER_TAB = 8000;
   let message = '';
   
@@ -479,7 +500,7 @@ function truncateMessage(message, maxLength) {
   return message.substring(0, maxLength) + '\n[content clipped]';
 }
 
-async function callOpenAIAPI(message, tabCount, accessToken, language = 'English', summaryLevel = 'short') {
+async function callOpenAIAPI(message, tabCount, accessToken, language = 'English', summaryLevel = 'short', signal = null) {
   const accountId = await getAccountId();
   console.log('[API] Using account_id:', accountId);
   
@@ -523,7 +544,8 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
   let response = await fetch(CHATGPT_API_URL, {
     method: 'POST',
     headers,
-    body
+    body,
+    signal
   });
 
   // If reasoning is rejected, retry without it
@@ -545,7 +567,8 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
       response = await fetch(CHATGPT_API_URL, {
         method: 'POST',
         headers,
-        body: fallbackBody
+        body: fallbackBody,
+        signal
       });
     }
   }

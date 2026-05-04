@@ -170,6 +170,7 @@ export class UIController {
     dom.summarizeBtn.addEventListener('click', () => this.handleSummarize());
     if (dom.copySummaryBtn) dom.copySummaryBtn.addEventListener('click', () => this.handleCopySummary());
     if (dom.expandSummaryBtn) dom.expandSummaryBtn.addEventListener('click', () => this.handleToggleExpand());
+    if (dom.stopBtn) dom.stopBtn.addEventListener('click', () => this.handleStop());
     dom.clearDebugBtn.addEventListener('click', () => { dom.debugConsole.innerHTML = ''; this.debugLog('Debug console cleared'); });
     dom.debugToggle.addEventListener('change', async () => { this.debugEnabled = dom.debugToggle.checked; await this.saveSetting('debugEnabled', this.debugEnabled); this.updateDebugVisibility(); this.debugLog(`Debug console ${this.debugEnabled ? 'enabled' : 'disabled'}`); });
     dom.languageSelect.addEventListener('change', async () => { await this.saveSetting('summaryLanguage', dom.languageSelect.value); this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`); });
@@ -353,6 +354,15 @@ export class UIController {
       selectedReadingListIds: this.selectedReadingListIds, isAuthenticated: this.isAuthenticated,
       debugLog: this.debugLog.bind(this), updateButtonsState: () => this.updateButtonsState()
     });
+  }
+
+  async handleStop() {
+    this.debugLog('Stopping summarization...');
+    try {
+      await chrome.runtime.sendMessage({ action: 'stop_summarize' });
+    } catch (error) {
+      this.debugLog(`Error stopping summarization: ${error.message}`, 'error');
+    }
   }
 
   showLoading() { showLoading(this.dom); }
