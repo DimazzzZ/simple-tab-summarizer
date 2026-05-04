@@ -16,6 +16,12 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
+What's new in 1.2.0:
+- Stop Summarization: Cancel ongoing summarization requests mid-flight with a new Stop button
+- Dynamic Page Content Extraction: Improved support for JavaScript-heavy pages (Atlassian, Google Dev Blog, etc.) that now wait for content to load before extracting
+- Unicode-Safe Text Processing: Fixed extraction to properly handle Cyrillic, CJK, and all non-Latin text
+- Enhanced Summary Overlay Typography: Prevents host page styles from overriding the modal's font stack
+
 What's new in 1.1.1:
 - Fixed packaging bug: all runtime module directories now included in release ZIP
 - Added release validation checks to ensure complete builds
