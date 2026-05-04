@@ -210,7 +210,7 @@ export class UIController {
     } catch (error) { this.debugLog(`Error refreshing group tabs: ${error.message}`, 'error'); }
   }
 
-  async checkAuthStatus() { this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this)); }
+  async checkAuthStatus() { this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this)); this.updateButtonsState(); }
 
   updateAuthUI(authenticated) { updateAuthUI(this.dom, authenticated); this.updateButtonsState(); }
 
