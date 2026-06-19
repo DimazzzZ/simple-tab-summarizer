@@ -71,6 +71,10 @@ export class UIController {
   }
 
   _applySessionState(session) {
+    const SESSION_TTL_MS = 30 * 60 * 1000;
+    if (session.updatedAt && Date.now() - session.updatedAt > SESSION_TTL_MS) {
+      return;
+    }
     if (session.summaryText) {
       this.dom.summaryContent.textContent = session.summaryText;
       this.dom.summarySection.classList.remove('hidden');
@@ -276,7 +280,7 @@ export class UIController {
     this.currentSource = this.dom.sourceSelect.value;
     this.debugLog(`Source changed to: ${this.currentSource}`);
     this.selectedTabIds.clear(); this.selectedReadingListIds.clear(); this.selectedReadingListUrls.clear();
-    hideSummary(this.dom); hideError(this.dom);
+    this.hideSummary(); this.hideError();
     if (this.currentSource === SourceType.CURRENT_TAB) { this.dom.groupSection.classList.add('hidden'); this.dom.readinglistSection.classList.add('hidden'); this.dom.pagesSection.classList.add('hidden'); }
     else if (this.currentSource === SourceType.TAB_GROUP) { this.dom.groupSection.classList.remove('hidden'); this.dom.readinglistSection.classList.add('hidden'); this.dom.pagesSection.classList.add('hidden'); }
     else if (this.currentSource === SourceType.READING_LIST) { this.dom.groupSection.classList.add('hidden'); this.dom.pagesSection.classList.add('hidden'); this.loadReadingList(); }
@@ -354,6 +358,7 @@ export class UIController {
       selectedReadingListIds: this.selectedReadingListIds, isAuthenticated: this.isAuthenticated,
       debugLog: this.debugLog.bind(this), updateButtonsState: () => this.updateButtonsState()
     });
+    this._saveSessionState();
   }
 
   async handleStop() {
