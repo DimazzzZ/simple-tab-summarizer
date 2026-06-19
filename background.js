@@ -462,7 +462,7 @@ async function handleSummarizeRequest(contents, tabCount, language = 'English', 
     }
 
     const userMessage = buildUserMessage(contents);
-    const truncatedMessage = truncateMessage(userMessage, 40000);
+    const truncatedMessage = truncateMessage(userMessage, 100000);
     const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language, summaryLevel, signal);
     
     currentSummarizationAbortController = null;
@@ -479,7 +479,7 @@ async function handleSummarizeRequest(contents, tabCount, language = 'English', 
 }
 
 function buildUserMessage(contents) {
-  const MAX_CHARS_PER_TAB = 8000;
+  const MAX_CHARS_PER_TAB = 30000;
   let message = '';
   
   contents.forEach((content, index) => {
@@ -515,6 +515,7 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
   }
   
   const langInstruction = `Output must be in ${language}.`;
+  const noiseFilter = 'The text below is raw text extracted from a webpage. It may contain navigation, headers, footers, sidebars, ads, and other non-content elements. Identify the actual main content and summarize only that — ignore UI chrome, menus, links, and boilerplate.';
   const levelInstructions = {
     short: tabCount <= 1
       ? 'Summarize the page content in ONE very concise paragraph (max 80 words). Focus only on the core message. Return only the paragraph — no headings, no bullets, no extra text.'
@@ -526,7 +527,7 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
       ? 'Provide a detailed summary of the page content (max 300 words). Cover all important points, key details, and notable context. You may use multiple paragraphs. Return only the summary — no headings, no bullets, no extra text.'
       : 'For each page section marked "=== PAGE N ===", provide a detailed summary (max 250 words) covering all important points and key details. You may use multiple paragraphs per section. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.'
   };
-  const instructions = `${langInstruction} ${levelInstructions[summaryLevel] || levelInstructions.short}`;
+  const instructions = `${langInstruction} ${noiseFilter} ${levelInstructions[summaryLevel] || levelInstructions.short}`;
   
   const body = JSON.stringify({
     model: OPENAI_MODEL,

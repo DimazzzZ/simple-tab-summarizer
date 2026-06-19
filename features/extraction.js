@@ -1,19 +1,22 @@
-/**
- * Content extraction module.
- * Extracts page content from tabs and reading list entries.
- */
-
 import { isRestrictedUrl, executeScriptWithTimeout, waitForTabReady } from '../utils/chrome-helpers.js';
 import { Timings } from '../constants/ui-keys.js';
 
-/**
- * Extracts content from an array of tabs.
- * @param {Object[]} tabs - Array of tab objects
- * @param {Function} debugLog - Logger function
- * @param {Function} onProgress - Progress callback (current, total)
- * @param {Function} onLoadingText - Loading text callback
- * @returns {Promise<Object[]>} Array of content objects
- */
+async function extractContentFromTab(tabId) {
+  await executeScriptWithTimeout(tabId, ['content.js']);
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: async () => {
+      if (window.__tabSummarizerExtractAsync) {
+        return await window.__tabSummarizerExtractAsync();
+      }
+      return null;
+    }
+  });
+
+  return results?.[0]?.result || null;
+}
+
 export async function extractTabContents(tabs, debugLog, onProgress, onLoadingText) {
   const contents = new Array(tabs.length);
   const totalTabs = tabs.length;
@@ -39,37 +42,11 @@ export async function extractTabContents(tabs, debugLog, onProgress, onLoadingTe
         debugLog(`Tab ${tab.id} reloaded, status: ${currentTab.status}`);
       }
 
-      debugLog(`Injecting content.js into tab ${currentTab.id}...`);
-      const results = await executeScriptWithTimeout(currentTab.id, ['content.js']);
-      debugLog(`Script injection completed for tab ${currentTab.id}`);
-
-      // Try async extraction first (waits for dynamic content)
-      let content = null;
-      try {
-        const asyncResults = await chrome.scripting.executeScript({
-          target: { tabId: currentTab.id },
-          func: async () => {
-            if (window.__tabSummarizerExtractAsync) {
-              return await window.__tabSummarizerExtractAsync();
-            }
-            return null;
-          }
-        });
-        if (asyncResults?.[0]?.result) {
-          content = asyncResults[0].result;
-          debugLog(`Tab ${index + 1} extracted (async): ${content.length} characters`);
-        }
-      } catch (e) {
-        debugLog(`Async extraction failed for tab ${index + 1}: ${e.message}`, 'warn');
-      }
-
-      // Fall back to sync result if async failed
-      if (!content && results?.[0]?.result) {
-        content = results[0].result;
-        debugLog(`Tab ${index + 1} extracted (sync): ${content.length} characters`);
-      }
+      debugLog(`Extracting content from tab ${currentTab.id}...`);
+      const content = await extractContentFromTab(currentTab.id);
 
       if (content) {
+        debugLog(`Tab ${index + 1} extracted: ${content.length} characters`);
         contents[index] = { title: currentTab.title, url: currentTab.url, content };
       } else {
         debugLog(`Tab ${index + 1} returned no content`, 'warn');
@@ -97,14 +74,6 @@ export async function extractTabContents(tabs, debugLog, onProgress, onLoadingTe
   return contents.filter(c => c !== undefined);
 }
 
-/**
- * Extracts content from reading list entries.
- * @param {Object[]} selectedEntries - Array of selected reading list entries
- * @param {Function} debugLog - Logger function
- * @param {Function} onProgress - Progress callback (current, total)
- * @param {Function} onLoadingText - Loading text callback
- * @returns {Promise<Object[]>} Array of content objects
- */
 export async function extractReadingListContents(selectedEntries, debugLog, onProgress, onLoadingText) {
   const contents = [];
   const totalItems = selectedEntries.length;
@@ -128,35 +97,8 @@ export async function extractReadingListContents(selectedEntries, debugLog, onPr
       const readyTab = await waitForTabReady(tempTab.id, Timings.READING_LIST_READY_TIMEOUT_MS);
       debugLog(`Tab ${readyTab.id} ready, status: ${readyTab.status}`);
 
-      debugLog(`Injecting content.js into tab ${readyTab.id}...`);
-      const results = await executeScriptWithTimeout(readyTab.id, ['content.js'], Timings.READING_LIST_READY_TIMEOUT_MS);
-      debugLog(`Script injection completed for tab ${readyTab.id}`);
-
-      // Try async extraction first (waits for dynamic content)
-      let content = null;
-      try {
-        const asyncResults = await chrome.scripting.executeScript({
-          target: { tabId: readyTab.id },
-          func: async () => {
-            if (window.__tabSummarizerExtractAsync) {
-              return await window.__tabSummarizerExtractAsync();
-            }
-            return null;
-          }
-        });
-        if (asyncResults?.[0]?.result) {
-          content = asyncResults[0].result;
-          debugLog(`Entry ${i + 1} extracted (async): ${content.length} characters`);
-        }
-      } catch (e) {
-        debugLog(`Async extraction failed for entry ${i + 1}: ${e.message}`, 'warn');
-      }
-
-      // Fall back to sync result if async failed
-      if (!content && results?.[0]?.result) {
-        content = results[0].result;
-        debugLog(`Entry ${i + 1} extracted (sync): ${content.length} characters`);
-      }
+      debugLog(`Extracting content from tab ${readyTab.id}...`);
+      const content = await extractContentFromTab(readyTab.id);
 
       try { await chrome.tabs.remove(readyTab.id); } catch {}
       debugLog(`Closed temp tab ${readyTab.id}`);
