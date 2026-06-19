@@ -16,6 +16,11 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
+What's new in 1.2.1:
+- Closed Shadow DOM Extraction: Fixed content extraction for platforms using closed shadow DOMs (e.g., Skilljar on Vue 3)
+- Google Docs Extraction: Document text from Google Docs is now properly extracted via DOCS_modelChunk JSON parsing
+- Session State Persistence: Summaries are now reliably saved to storage after each run, with a 30-minute TTL to prevent stale state restore
+
 What's new in 1.2.0:
 - Stop Summarization: Cancel ongoing summarization requests mid-flight with a new Stop button
 - Dynamic Page Content Extraction: Improved support for JavaScript-heavy pages (Atlassian, Google Dev Blog, etc.) that now wait for content to load before extracting
