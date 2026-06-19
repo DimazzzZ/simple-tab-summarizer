@@ -4,6 +4,7 @@
 *.swp
 *.swo
 *~
+.mimocode
 
 # OS
 .DS_Store
