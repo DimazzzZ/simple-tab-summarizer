@@ -51,6 +51,26 @@
     return parts.join('\n');
   }
 
+  function extractGoogleDocsText() {
+    try {
+      const scripts = document.querySelectorAll('script');
+      for (const s of scripts) {
+        const t = s.textContent || '';
+        if (t.includes('DOCS_modelChunk')) {
+          const match = t.match(/DOCS_modelChunk\s*=\s*({.*?});/s);
+          if (match) {
+            const data = JSON.parse(match[1]);
+            const texts = data.chunk
+              .filter(c => c.ty === 'is' && c.s)
+              .map(c => c.s);
+            if (texts.length > 0) return texts.join('\n');
+          }
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function cleanText(text) {
     if (!text) return '';
     return text
@@ -89,6 +109,11 @@
     while (Date.now() - startTime < MAX_WAIT_MS) {
       await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
 
+      const gdocsText = extractGoogleDocsText();
+      if (gdocsText && gdocsText.trim().length > 100) {
+        return cleanText(gdocsText);
+      }
+
       for (const sel of semanticSelectors) {
         try {
           const el = document.querySelector(sel);
@@ -109,6 +134,11 @@
         }
         prevText = rootText;
       }
+    }
+
+    const gdocsFallback = extractGoogleDocsText();
+    if (gdocsFallback && gdocsFallback.trim().length > 100) {
+      return cleanText(gdocsFallback);
     }
 
     const root = document.body || document.documentElement;
