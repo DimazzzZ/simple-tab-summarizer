@@ -16,6 +16,10 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
+What's new in 1.2.2:
+- API Error Handling: Improved error handling with better retry logic and clearer authentication failure messages
+- Test Infrastructure: Replaced external Google Doc tests with mocked fixtures for reliable CI
+
 What's new in 1.2.1:
 - Closed Shadow DOM Extraction: Fixed content extraction for platforms using closed shadow DOMs (e.g., Skilljar on Vue 3)
 - Google Docs Extraction: Document text from Google Docs is now properly extracted via DOCS_modelChunk JSON parsing

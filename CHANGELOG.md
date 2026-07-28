@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-28
+
+### Fixed
+- **API Error Handling**: Improved error handling structure for API responses with better retry logic and clearer error messages for authentication failures.
+
+### Changed
+- **Test Infrastructure**: Replaced external Google Doc tests with mocked HTML fixtures for deterministic CI-friendly tests.
+
+### Security
+- **Sensitive Data Removal**: Removed external Google Doc URL containing personal information from test files and git history.
+
+---
+
 ## [1.2.1] - 2026-06-19
 
 ### Fixed

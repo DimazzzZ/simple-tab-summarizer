@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Simple Tab Summarizer",
   "description": "Free AI summarizer for tabs, tab groups, and reading lists. Get instant summaries in 40+ languages with ChatGPT.",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "permissions": [
     "tabGroups",
     "tabs",
