@@ -571,16 +571,21 @@ async function callOpenAIAPI(message, tabCount, accessToken, language = 'English
         body: fallbackBody,
         signal
       });
+      if (!response.ok) {
+        const retryErrText = await response.text();
+        console.error('[API] Error response:', response.status, retryErrText.substring(0, 500));
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please reconnect to ChatGPT.');
+        }
+        throw new Error(`API error (${response.status}): ${retryErrText.substring(0, 200)}`);
+      }
+    } else {
+      console.error('[API] Error response:', response.status, errText.substring(0, 500));
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Authentication failed. Please reconnect to ChatGPT.');
+      }
+      throw new Error(`API error (${response.status}): ${errText.substring(0, 200)}`);
     }
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[API] Error response:', response.status, errorText.substring(0, 500));
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Authentication failed. Please reconnect to ChatGPT.');
-    }
-    throw new Error(`API error (${response.status}): ${errorText.substring(0, 200)}`);
   }
 
   // Check if response is SSE (streaming)
