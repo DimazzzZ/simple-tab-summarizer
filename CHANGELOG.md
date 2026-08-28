@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-08-28
+
+### Fixed
+- **Chrome Web Store Installation**: Included the manifest-declared shadow DOM monkeypatch in release packages, resolving the `Could not load JavaScript` invalid-package error.
+- **Closed Shadow DOM Extraction**: Run the monkeypatch and content extraction in Chrome's `MAIN` execution world so captured closed shadow roots remain accessible.
+
+### Changed
+- **Release Validation**: Packaging now fails when any manifest-declared resource is absent from the built extension, and the release workflow validates the extracted ZIP contents.
+
+---
+
 ## [1.2.2] - 2026-07-28
 
 ### Fixed

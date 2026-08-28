@@ -47,6 +47,7 @@ jobs:
             }
             console.log('Manifest validation passed');
           "
+          node scripts/validate-extension-files.mjs .
 
       - name: Check required files exist
         run: |
