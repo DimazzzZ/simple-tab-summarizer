@@ -22,11 +22,12 @@ export function isRestrictedUrl(url) {
  * @param {number} tabId - The tab ID
  * @param {string[]} files - Script files to inject
  * @param {number} [timeoutMs] - Timeout in milliseconds
+ * @param {"ISOLATED"|"MAIN"} [world] - JavaScript execution world
  * @returns {Promise<any>} Script execution result
  */
-export function executeScriptWithTimeout(tabId, files, timeoutMs = Timings.SCRIPT_TIMEOUT_MS) {
+export function executeScriptWithTimeout(tabId, files, timeoutMs = Timings.SCRIPT_TIMEOUT_MS, world = 'ISOLATED') {
   return Promise.race([
-    chrome.scripting.executeScript({ target: { tabId }, files }),
+    chrome.scripting.executeScript({ target: { tabId }, files, world }),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Script execution timed out after ${timeoutMs}ms`)), timeoutMs)
     )

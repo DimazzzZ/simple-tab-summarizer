@@ -2,10 +2,11 @@ import { isRestrictedUrl, executeScriptWithTimeout, waitForTabReady } from '../u
 import { Timings } from '../constants/ui-keys.js';
 
 async function extractContentFromTab(tabId) {
-  await executeScriptWithTimeout(tabId, ['content.js']);
+  await executeScriptWithTimeout(tabId, ['content.js'], Timings.SCRIPT_TIMEOUT_MS, 'MAIN');
 
   const results = await chrome.scripting.executeScript({
     target: { tabId },
+    world: 'MAIN',
     func: async () => {
       if (window.__tabSummarizerExtractAsync) {
         return await window.__tabSummarizerExtractAsync();

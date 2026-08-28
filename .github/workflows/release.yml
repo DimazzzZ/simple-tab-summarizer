@@ -46,7 +46,7 @@ jobs:
       - name: Validate required files before packaging
         run: |
           echo "Validating required files..."
-          REQUIRED_FILES="manifest.json background.js content.js popup.html popup.js sidebar.html sidebar.js ui-controller.js styles.css LICENSE PRIVACY.md"
+          REQUIRED_FILES="manifest.json background.js content.js shadow-monkeypatch-world.js popup.html popup.js sidebar.html sidebar.js ui-controller.js styles.css LICENSE PRIVACY.md"
           REQUIRED_DIRS="constants dom features lifecycle render sync utils icons"
           for file in $REQUIRED_FILES; do
             if [ ! -f "$file" ]; then
@@ -80,6 +80,10 @@ jobs:
           ZIP_FILE="dist/simple-tab-summarizer-v${{ inputs.version }}.zip"
           echo "Validating ZIP contents..."
           unzip -l "$ZIP_FILE"
+          EXTRACT_DIR=$(mktemp -d)
+          trap 'rm -rf "$EXTRACT_DIR"' EXIT
+          unzip -q "$ZIP_FILE" -d "$EXTRACT_DIR"
+          node scripts/validate-extension-files.mjs "$EXTRACT_DIR"
           # Check critical files exist in ZIP
           unzip -l "$ZIP_FILE" | grep -q "dom/dom-bindings.js" || (echo "❌ dom/dom-bindings.js missing in ZIP" && exit 1)
           unzip -l "$ZIP_FILE" | grep -q "features/auth.js" || (echo "❌ features/auth.js missing in ZIP" && exit 1)

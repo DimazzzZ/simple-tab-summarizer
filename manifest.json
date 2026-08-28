@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Simple Tab Summarizer",
   "description": "Free AI summarizer for tabs, tab groups, and reading lists. Get instant summaries in 40+ languages with ChatGPT.",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "permissions": [
     "tabGroups",
     "tabs",
@@ -32,11 +32,16 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["attach-shadow-monkeypatch.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "shadow-monkeypatch-world.js"
+      ],
       "run_at": "document_start",
       "all_frames": true,
-      "match_about_blank": true
+      "match_about_blank": true,
+      "world": "MAIN"
     }
   ],
   "icons": {

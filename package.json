@@ -1,12 +1,13 @@
 {
   "name": "simple-tab-summarizer",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Free AI summarizer for tabs, tab groups, and reading lists",
   "type": "module",
   "scripts": {
     "test": "npx playwright test",
     "test:unit": "node tests/unit/test-extraction.js && node tests/unit/test-background.js",
-    "test:e2e": "npx playwright test tests/e2e/"
+    "test:e2e": "npx playwright test tests/e2e/",
+    "validate:extension": "node scripts/validate-extension-files.mjs ."
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0"

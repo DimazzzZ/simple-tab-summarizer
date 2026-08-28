@@ -32,6 +32,7 @@ mkdir -p "$BUILD_DIR"
 cp "$ROOT_DIR/manifest.json" "$BUILD_DIR/"
 cp "$ROOT_DIR/background.js" "$BUILD_DIR/"
 cp "$ROOT_DIR/content.js" "$BUILD_DIR/"
+cp "$ROOT_DIR/shadow-monkeypatch-world.js" "$BUILD_DIR/"
 cp "$ROOT_DIR/popup.html" "$BUILD_DIR/"
 cp "$ROOT_DIR/popup.js" "$BUILD_DIR/"
 cp "$ROOT_DIR/sidebar.html" "$BUILD_DIR/"
@@ -51,7 +52,11 @@ for dir in constants dom features lifecycle render sync utils; do
   fi
 done
 
+# Validate that every file referenced by the packaged manifest is present
+node "$ROOT_DIR/scripts/validate-extension-files.mjs" "$BUILD_DIR"
+
 # Create ZIP (manifest.json at root level)
+rm -f "$DIST_DIR/$ZIP_NAME"
 cd "$BUILD_DIR"
 zip -r "$DIST_DIR/$ZIP_NAME" .
 
