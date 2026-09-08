@@ -9,11 +9,11 @@
   <a href="manifest.json">
     <img src="https://img.shields.io/badge/Chrome%20Extension-MV3-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension MV3" />
   </a>
-  <a href="https://chatgpt.com/">
-    <img src="https://img.shields.io/badge/ChatGPT-Required-brightgreen.svg?logo=data:image/svg%2bxml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgcm9sZT0iaW1nIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgoKICAgIDxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9fdHJhY2VyQ2FycmllciIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9faWNvbkNhcnJpZXIiPgoKICAgICAgICA8dGl0bGU+T3BlbkFJIGljb248L3RpdGxlPgoKICAgICAgICA8cGF0aCBkPSJNMjIuMjgxOSA5LjgyMTFhNS45ODQ3IDUuOTg0NyAwIDAgMC0uNTE1Ny00LjkxMDggNi4wNDYyIDYuMDQ2MiAwIDAgMC02LjUwOTgtMi45QTYuMDY1MSA2LjA2NTEgMCAwIDAgNC45ODA3IDQuMTgxOGE1Ljk4NDcgNS45ODQ3IDAgMCAwLTMuOTk3NyAyLjkgNi4wNDYyIDYuMDQ2MiAwIDAgMCAuNzQyNyA3LjA5NjYgNS45OCA1Ljk4IDAgMCAwIC41MTEgNC45MTA3IDYuMDUxIDYuMDUxIDAgMCAwIDYuNTE0NiAyLjkwMDFBNS45ODQ3IDUuOTg0NyAwIDAgMCAxMy4yNTk5IDI0YTYuMDU1NyA2LjA1NTcgMCAwIDAgNS43NzE4LTQuMjA1OCA1Ljk4OTQgNS45ODk0IDAgMCAwIDMuOTk3Ny0yLjkwMDEgNi4wNTU3IDYuMDU1NyAwIDAgMC0uNzQ3NS03LjA3Mjl6bS05LjAyMiAxMi42MDgxYTQuNDc1NSA0LjQ3NTUgMCAwIDEtMi44NzY0LTEuMDQwOGwuMTQxOS0uMDgwNCA0Ljc3ODMtMi43NTgyYS43OTQ4Ljc5NDggMCAwIDAgLjM5MjctLjY4MTN2LTYuNzM2OWwyLjAyIDEuMTY4NmEuMDcxLjA3MSAwIDAgMSAuMDM4LjA1MnY1LjU4MjZhNC41MDQgNC41MDQgMCAwIDEtNC40OTQ1IDQuNDk0NHptLTkuNjYwNy00LjEyNTRhNC40NzA4IDQuNDcwOCAwIDAgMS0uNTM0Ni0zLjAxMzdsLjE0Mi4wODUyIDQuNzgzIDIuNzU4MmEuNzcxMi43NzEyIDAgMCAwIC43ODA2IDBsNS44NDI4LTMuMzY4NXYyLjMzMjRhLjA4MDQuMDgwNCAwIDAgMS0uMDMzMi4wNjE1TDkuNzQgMTkuOTUwMmE0LjQ5OTIgNC40OTkyIDAgMCAxLTYuMTQwOC0xLjY0NjR6TTIuMzQwOCA3Ljg5NTZhNC40ODUgNC40ODUgMCAwIDEgMi4zNjU1LTEuOTcyOFYxMS42YS43NjY0Ljc2NjQgMCAwIDAgLjM4NzkuNjc2NWw1LjgxNDQgMy4zNTQzLTIuMDIwMSAxLjE2ODVhLjA3NTcuMDc1NyAwIDAgMS0uMDcxIDBsLTQuODMwMy0yLjc4NjVBNC41MDQgNC41MDQgMCAwIDEgMi4zNDA4IDcuODcyem0xNi41OTYzIDMuODU1OEwxMy4xMDM4IDguMzY0IDE1LjExOTIgNy4yYS4wNzU3LjA3NTcgMCAwIDEgLjA3MSAwbDQuODMwMyAyLjc5MTNhNC40OTQ0IDQuNDk0NCAwIDAgMS0uNjc2NSA4LjEwNDJ2LTUuNjc3MmEuNzkuNzkgMCAwIDAtLjQwNy0uNjY3em0yLjAxMDctMy4wMjMxbC0uMTQyLS4wODUyLTQuNzczNS0yLjc4MThhLjc3NTkuNzc1OSAwIDAgMC0uNzg1NCAwTDkuNDA5IDkuMjI5N1Y2Ljg5NzRhLjA2NjIuMDY2MiAwIDAgMSAuMDI4NC0uMDYxNWw0LjgzMDMtMi43ODY2YTQuNDk5MiA0LjQ5OTIgMCAwIDEgNi42ODAyIDQuNjZ6TTguMzA2NSAxMi44NjNsLTIuMDItMS4xNjM4YS4wODA0LjA4MDQgMCAwIDEtLjAzOC0uMDU2N1Y2LjA3NDJhNC40OTkyIDQuNDk5MiAwIDAgMSA3LjM3NTctMy40NTM3bC0uMTQyLjA4MDVMOC43MDQgNS40NTlhLjc5NDguNzk0OCAwIDAgMC0uMzkyNy42ODEzem0xLjA5NzYtMi4zNjU0bDIuNjAyLTEuNDk5OCAyLjYwNjkgMS40OTk4djIuOTk5NGwtMi41OTc0IDEuNDk5Ny0yLjYwNjctMS40OTk3WiIvPgoKICAgIDwvZz4KCjwvc3ZnPgo=" alt="ChatGPT Account Required" />
+  <a href="https://developer.chrome.com/docs/ai/summarizer-api">
+    <img src="https://img.shields.io/badge/Built--in%20AI-Zero%20Auth-brightgreen?logo=googlechrome&logoColor=white" alt="Chrome Built-in AI (Zero Auth)" />
   </a>
   <a href="manifest.json">
-    <img src="https://img.shields.io/badge/Version-1.2.4-lightgrey" alt="Version 1.2.4" />
+    <img src="https://img.shields.io/badge/Version-1.3.0-lightgrey" alt="Version 1.3.0" />
   </a>
   <a href="tests/">
     <img src="https://img.shields.io/badge/Tested%20with-Playwright-2e7d32" alt="Tested with Playwright" />
@@ -24,15 +24,18 @@
 </p>
 
 A Chrome Extension (Manifest V3) that reads the content of the current tab, selected tabs from a tab group, or pages
-from Chrome's Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or
-persistent sidebar panel.
+from Chrome's Reading List, summarizes them using **Chrome's built-in AI (Gemini Nano, on-device)** — no sign-up
+required — and presents the result in a popup or persistent sidebar panel. Optionally sign in to ChatGPT for 40+
+language support and higher-quality summaries.
 
 ## Free to Use
 
-**This extension itself is free to use.** You need a ChatGPT/OpenAI account to connect it. OpenAI offers a free ChatGPT
-tier for many users, so you may be able to start without a paid subscription. Availability, supported features, and
-usage limits depend on OpenAI's current policies and your account status, and may change over time.
-Check [OpenAI's official pricing and usage documentation](https://openai.com/pricing) for the latest details.
+**This extension is free and works out-of-the-box** on Chrome 138+ with no account or API key. It uses Chrome's
+built-in Summarizer API (Gemini Nano) which runs entirely on-device — your data never leaves your machine.
+
+The built-in AI supports English, Japanese, Spanish, German, and French. For other languages (40+ in the dropdown),
+you can optionally sign in to a ChatGPT/OpenAI account. OpenAI offers a free tier for many users; availability and
+limits depend on [OpenAI's current policies](https://openai.com/pricing).
 
 ## Features
 
@@ -40,6 +43,7 @@ Check [OpenAI's official pricing and usage documentation](https://openai.com/pri
 - 📑 **Tab Group Summarization** — Extract and summarize all tabs in a selected tab group with live auto-refresh
 - 📖 **Reading List Summarization** — Summarize pages saved to Chrome's Reading List with live auto-refresh
 - 🤖 **AI-powered summarization** via ChatGPT Codex API with streaming responses and configurable verbosity (Short, Medium, Detailed)
+- 🧠 **Built-in AI (Gemini Nano)** — Zero-auth, on-device summarization via Chrome's Summarizer API (Chrome 138+). Supports English, Japanese, Spanish, German, French.
 - 🚀 **Expand Summary** — View summaries in a full-page overlay on the active tab for better readability
 - 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account, with automatic token refresh
 - 🌐 **Summary Language Selector** — Choose output language from 40+ languages (A-Z sorted)
@@ -188,9 +192,16 @@ Special handling:
 
 ### Summarization (`background.js`)
 
-The service worker delegates to `api/codex-client.js` for Codex API handling:
+The extension uses a **provider abstraction** (`api/providers/`) to select the best summarization backend:
 
-1. Collects content from all selected tabs or reading list entries
+- **Chrome built-in AI** (`chrome-builtin`): Uses the `Summarizer` global (Chrome 138+) directly in the popup/sidebar page context. Runs fully on-device, no network, no auth. Supports English, Japanese, Spanish, German, French. On first use, Chrome downloads the Gemini Nano model (~2 GB); subsequent calls are instant.
+- **ChatGPT/Codex** (`chatgpt-codex`): Delegates to the service worker (`background.js` → `api/codex-client.js`), which owns the OAuth token and network call. Supports 40+ languages.
+
+Provider selection is language-aware: if the chosen language is supported by the built-in model and the API is available, it's used automatically. Otherwise, the extension falls back to ChatGPT (if signed in) or shows a clear message about what's needed.
+
+The ChatGPT/Codex path works as follows:
+
+1. Collects content from all selected tabs or reading list entries (via the service worker)
 2. Builds a structured prompt with page titles and URLs
 3. Truncates if content exceeds token limits
 4. Sends to the ChatGPT Codex API (`https://chatgpt.com/backend-api/codex/responses`) with `stream: true`

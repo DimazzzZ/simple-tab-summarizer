@@ -12,19 +12,20 @@ const AUTH_ICONS = {
  * Checks authentication status via background script.
  * @param {Object} dom - DOM references
  * @param {Function} debugLog - Logger function
+ * @param {Array<string>} [availableProviders] - List of available provider names
  * @returns {Promise<boolean>} Whether user is authenticated
  */
-export async function checkAuthStatus(dom, debugLog) {
+export async function checkAuthStatus(dom, debugLog, availableProviders = []) {
   try {
     debugLog('Checking auth status...');
     const response = await chrome.runtime.sendMessage({ action: 'check_auth' });
     const authenticated = response.authenticated;
     debugLog(`Auth status: ${authenticated ? 'Connected' : 'Not connected'}`);
-    updateAuthUI(dom, authenticated);
+    updateAuthUI(dom, authenticated, availableProviders);
     return authenticated;
   } catch (error) {
     debugLog(`Auth check error: ${error.message}`, 'error');
-    updateAuthUI(dom, false);
+    updateAuthUI(dom, false, availableProviders);
     return false;
   }
 }
@@ -33,23 +34,33 @@ export async function checkAuthStatus(dom, debugLog) {
  * Updates the auth UI elements.
  * @param {Object} dom - DOM references
  * @param {boolean} authenticated - Whether user is authenticated
+ * @param {Array<string>} [availableProviders] - List of available provider names
  */
-export function updateAuthUI(dom, authenticated) {
+export function updateAuthUI(dom, authenticated, availableProviders = []) {
   if (authenticated) {
     dom.authIcon.classList.remove('disconnected');
     dom.authIcon.classList.add('connected');
     dom.authIcon.innerHTML = AUTH_ICONS.connected;
-    dom.authText.textContent = 'Connected to ChatGPT';
+    if (availableProviders.includes('chrome-builtin') && availableProviders.includes('chatgpt-codex')) {
+      dom.authText.textContent = 'Ready (built-in + ChatGPT)';
+    } else if (availableProviders.includes('chatgpt-codex')) {
+      dom.authText.textContent = 'Ready (ChatGPT)';
+    } else {
+      dom.authText.textContent = 'Connected to ChatGPT';
+    }
     dom.connectBtn.classList.add('hidden');
     dom.disconnectBtn.classList.remove('hidden');
   } else {
     dom.authIcon.classList.remove('connected');
     dom.authIcon.classList.add('disconnected');
     dom.authIcon.innerHTML = AUTH_ICONS.disconnected;
-    dom.authText.textContent = 'Not connected';
+    if (availableProviders.includes('chrome-builtin')) {
+      dom.authText.textContent = 'Ready (built-in AI)';
+    } else {
+      dom.authText.textContent = 'Not ready (sign in to ChatGPT)';
+    }
     dom.connectBtn.classList.remove('hidden');
     dom.disconnectBtn.classList.add('hidden');
-    dom.summarizeBtn.disabled = true;
   }
 }
 
@@ -72,29 +83,29 @@ export async function handleConnect(dom, debugLog, showError, hideError) {
     if (result.error) {
       debugLog(`Connection error: ${result.error}`, 'error');
       showError(result.error);
-      updateAuthUI(dom, false);
+      updateAuthUI(dom, false, []);
       return false;
     } else if (result.success) {
       debugLog(`Connected to ChatGPT: ${result.message || 'Success'}`);
-      updateAuthUI(dom, true);
+      updateAuthUI(dom, true, []);
       hideError();
       return true;
     } else if (result.needsLogin) {
       debugLog('User needs to log in to ChatGPT');
       chrome.tabs.create({ url: 'https://chatgpt.com' });
       showError('Please log in to ChatGPT, then click Connect again.');
-      updateAuthUI(dom, false);
+      updateAuthUI(dom, false, []);
       return false;
     } else {
       debugLog(`Connection failed: ${result.message}`, 'error');
       showError(result.message || 'Connection failed.');
-      updateAuthUI(dom, false);
+      updateAuthUI(dom, false, []);
       return false;
     }
   } catch (error) {
     debugLog(`Connection error: ${error.message}`, 'error');
     showError('Failed to connect. Please try again.');
-    updateAuthUI(dom, false);
+    updateAuthUI(dom, false, []);
     return false;
   } finally {
     dom.connectBtn.disabled = false;
@@ -114,7 +125,7 @@ export async function handleDisconnect(dom, debugLog, showError, hideError, hide
   debugLog('Disconnecting from ChatGPT...');
   try {
     await chrome.runtime.sendMessage({ action: 'disconnect' });
-    updateAuthUI(dom, false);
+    updateAuthUI(dom, false, []);
     hideError();
     hideSummary();
     debugLog('Disconnected from ChatGPT');

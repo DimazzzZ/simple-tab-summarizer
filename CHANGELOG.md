@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-08
+
+### Added
+- **Chrome Built-in AI (Gemini Nano) as Zero-Auth Default**: The extension now uses Chrome's on-device Summarizer API (Gemini Nano) as its default provider — no sign-up, no API key, no network round-trip. Available on Chrome 138+ with adequate hardware (see [Summarizer API requirements](https://developer.chrome.com/docs/ai/summarizer-api#hardware)). ChatGPT sign-in is now optional and used only when the built-in model can't service the request.
+- **Language-Aware Provider Selection**: Built-in AI handles English, Japanese, Spanish, German, and French locally. For the other ~35 languages in the dropdown, the extension routes to ChatGPT (when signed in). The UI reflects which provider is in use (`Ready (built-in AI)`, `Ready (ChatGPT)`, `Ready (built-in + ChatGPT)`).
+- **Provider Abstraction (`api/providers/`)**: New `api/providers/{chrome-builtin,chatgpt-codex,index}.js` modules cleanly separate provider implementations from selection logic, so future providers (e.g., Prompt API, Writer API, other clouds) drop in without churning `background.js` or the UI.
+
+### Changed
+- **Summarize Button No Longer Gated On ChatGPT Sign-In**: If Chrome built-in AI is available, users can summarize immediately with no account. The old `Please connect to ChatGPT first` hard block is removed; the button now enables whenever at least one provider can serve the currently selected language.
+- **On-Device Model Download**: On first use of the built-in provider, the loading UI shows model download progress (`Downloading on-device model: N%`). No data leaves the device.
+
+---
+
 ## [1.2.4] - 2026-08-31
 
 ### Fixed

@@ -15,6 +15,7 @@ import { loadTabGroups, handleGroupSelect } from './features/tab-groups.js';
 import { loadReadingList, removeReadingListEntry, refreshReadingList } from './features/reading-list.js';
 import { handleSummarize } from './features/summarize.js';
 import { setupTabLifecycleListeners, setupReadingListLifecycleListeners } from './lifecycle/listeners.js';
+import { listAvailableProviders } from './api/providers/index.js';
 
 export class UIController {
   constructor(dom, options = {}) {
@@ -29,6 +30,7 @@ export class UIController {
     this.selectedReadingListIds = new Set();
     this.selectedReadingListUrls = new Set();
     this.isAuthenticated = false;
+    this.availableProviders = [];
     this.allGroups = [];
     this.debugEnabled = false;
     this.currentSource = SourceType.CURRENT_TAB;
@@ -177,7 +179,14 @@ export class UIController {
     if (dom.stopBtn) dom.stopBtn.addEventListener('click', () => this.handleStop());
     dom.clearDebugBtn.addEventListener('click', () => { dom.debugConsole.innerHTML = ''; this.debugLog('Debug console cleared'); });
     dom.debugToggle.addEventListener('change', async () => { this.debugEnabled = dom.debugToggle.checked; await this.saveSetting('debugEnabled', this.debugEnabled); this.updateDebugVisibility(); this.debugLog(`Debug console ${this.debugEnabled ? 'enabled' : 'disabled'}`); });
-    dom.languageSelect.addEventListener('change', async () => { await this.saveSetting('summaryLanguage', dom.languageSelect.value); this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`); });
+    dom.languageSelect.addEventListener('change', async () => {
+      await this.saveSetting('summaryLanguage', dom.languageSelect.value);
+      this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`);
+      // Provider availability depends on language (built-in supports only 5 langs).
+      await this.refreshAvailableProviders();
+      updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders);
+      this.updateButtonsState();
+    });
     dom.summaryLevelSelect.addEventListener('change', async () => { await this.saveSetting('summaryLevel', dom.summaryLevelSelect.value); this.debugLog(`Summary level changed to: ${dom.summaryLevelSelect.value}`); });
     this._tabCleanup = setupTabLifecycleListeners(this, () => this.debouncedRefreshSelectedGroup());
     this._readingListCleanup = setupReadingListLifecycleListeners(this, () => this.debouncedRefreshReadingList());
@@ -215,20 +224,50 @@ export class UIController {
     } catch (error) { this.debugLog(`Error refreshing group tabs: ${error.message}`, 'error'); }
   }
 
-  async checkAuthStatus() { this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this)); this.updateButtonsState(); }
+  async refreshAvailableProviders() {
+    try {
+      const language = this.dom.languageSelect?.value || 'English';
+      const providers = await listAvailableProviders(language, { isAuthenticated: this.isAuthenticated });
+      this.availableProviders = providers.map(p => p.name);
+      this.debugLog(`Available providers for ${language}: ${this.availableProviders.join(', ') || '(none)'}`);
+    } catch (e) {
+      this.availableProviders = [];
+      this.debugLog(`Provider probe failed: ${e.message}`, 'error');
+    }
+  }
 
-  updateAuthUI(authenticated) { updateAuthUI(this.dom, authenticated); this.updateButtonsState(); }
+  async checkAuthStatus() {
+    this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this), []);
+    // Now that we know auth state, probe providers and re-render the auth UI.
+    await this.refreshAvailableProviders();
+    updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders);
+    this.updateButtonsState();
+  }
+
+  updateAuthUI(authenticated) {
+    updateAuthUI(this.dom, authenticated, this.availableProviders);
+    this.updateButtonsState();
+  }
 
   updateButtonsState() {
     let hasSelection = false;
     if (this.currentSource === SourceType.CURRENT_TAB) hasSelection = true;
     else if (this.currentSource === SourceType.TAB_GROUP) hasSelection = this.selectedTabIds.size > 0;
     else if (this.currentSource === SourceType.READING_LIST) hasSelection = this.selectedReadingListIds.size > 0;
-    this.dom.summarizeBtn.disabled = !this.isAuthenticated || !hasSelection;
+    const hasProvider = this.availableProviders.length > 0;
+    this.dom.summarizeBtn.disabled = !hasProvider || !hasSelection;
   }
 
-  async handleConnect() { await handleConnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom)); }
-  async handleDisconnect() { await handleDisconnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom), () => hideSummary(this.dom)); }
+  async handleConnect() {
+    await handleConnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom));
+    // Re-probe auth + providers after the OAuth flow so the UI reflects the new state.
+    await this.checkAuthStatus();
+  }
+  async handleDisconnect() {
+    await handleDisconnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom), () => hideSummary(this.dom));
+    // Re-probe so the ChatGPT provider is removed from availableProviders.
+    await this.checkAuthStatus();
+  }
 
   async loadTabGroups() { this.allGroups = await loadTabGroups(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m)); }
 
@@ -353,10 +392,16 @@ export class UIController {
 
   async handleSummarize() {
     await handleSummarize({
-      source: this.currentSource, dom: this.dom, groupTabs: this.groupTabs,
-      selectedTabIds: this.selectedTabIds, readingListEntries: this.readingListEntries,
-      selectedReadingListIds: this.selectedReadingListIds, isAuthenticated: this.isAuthenticated,
-      debugLog: this.debugLog.bind(this), updateButtonsState: () => this.updateButtonsState()
+      source: this.currentSource,
+      dom: this.dom,
+      groupTabs: this.groupTabs,
+      selectedTabIds: this.selectedTabIds,
+      readingListEntries: this.readingListEntries,
+      selectedReadingListIds: this.selectedReadingListIds,
+      isAuthenticated: this.isAuthenticated,
+      availableProviders: this.availableProviders,
+      debugLog: this.debugLog.bind(this),
+      updateButtonsState: () => this.updateButtonsState()
     });
     this._saveSessionState();
   }
