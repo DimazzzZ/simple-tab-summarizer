@@ -16,6 +16,11 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
+What's new in 1.2.4:
+- Summarization Fix: Restored summaries after OpenAI retired the previous model — now uses gpt-5.6-luna
+- Model Fallback: Automatically retries with an alternate model if one becomes unavailable, so summaries keep working through future model changes
+- More Reliable Streaming: Hardened response parsing so summaries render consistently
+
 What's new in 1.2.3:
 - Installation Fix: Restored the runtime script omitted from the Chrome Web Store package
 - Closed Shadow DOM Extraction: Run the capture and extraction scripts in the same page execution world

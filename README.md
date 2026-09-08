@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/badge/ChatGPT-Required-brightgreen.svg?logo=data:image/svg%2bxml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgcm9sZT0iaW1nIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgoKICAgIDxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9fdHJhY2VyQ2FycmllciIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9faWNvbkNhcnJpZXIiPgoKICAgICAgICA8dGl0bGU+T3BlbkFJIGljb248L3RpdGxlPgoKICAgICAgICA8cGF0aCBkPSJNMjIuMjgxOSA5LjgyMTFhNS45ODQ3IDUuOTg0NyAwIDAgMC0uNTE1Ny00LjkxMDggNi4wNDYyIDYuMDQ2MiAwIDAgMC02LjUwOTgtMi45QTYuMDY1MSA2LjA2NTEgMCAwIDAgNC45ODA3IDQuMTgxOGE1Ljk4NDcgNS45ODQ3IDAgMCAwLTMuOTk3NyAyLjkgNi4wNDYyIDYuMDQ2MiAwIDAgMCAuNzQyNyA3LjA5NjYgNS45OCA1Ljk4IDAgMCAwIC41MTEgNC45MTA3IDYuMDUxIDYuMDUxIDAgMCAwIDYuNTE0NiAyLjkwMDFBNS45ODQ3IDUuOTg0NyAwIDAgMCAxMy4yNTk5IDI0YTYuMDU1NyA2LjA1NTcgMCAwIDAgNS43NzE4LTQuMjA1OCA1Ljk4OTQgNS45ODk0IDAgMCAwIDMuOTk3Ny0yLjkwMDEgNi4wNTU3IDYuMDU1NyAwIDAgMC0uNzQ3NS03LjA3Mjl6bS05LjAyMiAxMi42MDgxYTQuNDc1NSA0LjQ3NTUgMCAwIDEtMi44NzY0LTEuMDQwOGwuMTQxOS0uMDgwNCA0Ljc3ODMtMi43NTgyYS43OTQ4Ljc5NDggMCAwIDAgLjM5MjctLjY4MTN2LTYuNzM2OWwyLjAyIDEuMTY4NmEuMDcxLjA3MSAwIDAgMSAuMDM4LjA1MnY1LjU4MjZhNC41MDQgNC41MDQgMCAwIDEtNC40OTQ1IDQuNDk0NHptLTkuNjYwNy00LjEyNTRhNC40NzA4IDQuNDcwOCAwIDAgMS0uNTM0Ni0zLjAxMzdsLjE0Mi4wODUyIDQuNzgzIDIuNzU4MmEuNzcxMi43NzEyIDAgMCAwIC43ODA2IDBsNS44NDI4LTMuMzY4NXYyLjMzMjRhLjA4MDQuMDgwNCAwIDAgMS0uMDMzMi4wNjE1TDkuNzQgMTkuOTUwMmE0LjQ5OTIgNC40OTkyIDAgMCAxLTYuMTQwOC0xLjY0NjR6TTIuMzQwOCA3Ljg5NTZhNC40ODUgNC40ODUgMCAwIDEgMi4zNjU1LTEuOTcyOFYxMS42YS43NjY0Ljc2NjQgMCAwIDAgLjM4NzkuNjc2NWw1LjgxNDQgMy4zNTQzLTIuMDIwMSAxLjE2ODVhLjA3NTcuMDc1NyAwIDAgMS0uMDcxIDBsLTQuODMwMy0yLjc4NjVBNC41MDQgNC41MDQgMCAwIDEgMi4zNDA4IDcuODcyem0xNi41OTYzIDMuODU1OEwxMy4xMDM4IDguMzY0IDE1LjExOTIgNy4yYS4wNzU3LjA3NTcgMCAwIDEgLjA3MSAwbDQuODMwMyAyLjc5MTNhNC40OTQ0IDQuNDk0NCAwIDAgMS0uNjc2NSA4LjEwNDJ2LTUuNjc3MmEuNzkuNzkgMCAwIDAtLjQwNy0uNjY3em0yLjAxMDctMy4wMjMxbC0uMTQyLS4wODUyLTQuNzczNS0yLjc4MThhLjc3NTkuNzc1OSAwIDAgMC0uNzg1NCAwTDkuNDA5IDkuMjI5N1Y2Ljg5NzRhLjA2NjIuMDY2MiAwIDAgMSAuMDI4NC0uMDYxNWw0LjgzMDMtMi43ODY2YTQuNDk5MiA0LjQ5OTIgMCAwIDEgNi42ODAyIDQuNjZ6TTguMzA2NSAxMi44NjNsLTIuMDItMS4xNjM4YS4wODA0LjA4MDQgMCAwIDEtLjAzOC0uMDU2N1Y2LjA3NDJhNC40OTkyIDQuNDk5MiAwIDAgMSA3LjM3NTctMy40NTM3bC0uMTQyLjA4MDVMOC43MDQgNS40NTlhLjc5NDguNzk0OCAwIDAgMC0uMzkyNy42ODEzem0xLjA5NzYtMi4zNjU0bDIuNjAyLTEuNDk5OCAyLjYwNjkgMS40OTk4djIuOTk5NGwtMi41OTc0IDEuNDk5Ny0yLjYwNjctMS40OTk3WiIvPgoKICAgIDwvZz4KCjwvc3ZnPgo=" alt="ChatGPT Account Required" />
   </a>
   <a href="manifest.json">
-    <img src="https://img.shields.io/badge/Version-1.2.3-lightgrey" alt="Version 1.2.3" />
+    <img src="https://img.shields.io/badge/Version-1.2.4-lightgrey" alt="Version 1.2.4" />
   </a>
   <a href="tests/">
     <img src="https://img.shields.io/badge/Tested%20with-Playwright-2e7d32" alt="Tested with Playwright" />
@@ -63,9 +63,12 @@ simple-tab-summarizer/
 ├── styles.css               # Shared UI styling
 ├── background.js            # Service worker (OAuth, summarization, display mode control)
 ├── content.js               # Fast content extraction script (textContent-based)
+├── shadow-monkeypatch-world.js  # Captures closed shadow roots for extraction (MAIN world)
 ├── package.json             # Node.js dependencies and npm scripts
 ├── package-lock.json        # Locked dependency versions
 ├── playwright.config.js     # Playwright E2E test configuration
+├── api/
+│   └── codex-client.js      # Codex API client: request assembly, model fallback, SSE parsing
 ├── constants/               # UI keys and shared constants
 ├── dom/                     # DOM binding helpers
 ├── features/                # Core logic modules (auth, extraction, summarize, etc.)
@@ -79,15 +82,23 @@ simple-tab-summarizer/
 │   ├── icon48.png           # Extension page icon (48x48)
 │   └── icon128.png          # Chrome Web Store icon (128x128)
 ├── scripts/
-│   └── generate-icons.sh    # Icon generation script
+│   ├── generate-icons.sh              # Icon generation script
+│   ├── package-extension.sh           # Build & package the extension ZIP
+│   ├── prepare-screenshots.sh         # Prepare store screenshots
+│   ├── validate-extension-files.mjs   # Verify manifest-declared resources exist in the build
+│   └── validate-extension-imports.mjs # Verify statically imported ES modules are packaged
 ├── tests/
 │   ├── e2e/                 # Playwright E2E tests
 │   │   └── popup.spec.js
 │   └── unit/                # Unit tests
+│       ├── chrome-mock.js           # Minimal chrome global shim for Node
 │       ├── test-background.js
-│       └── test-extraction.js
+│       ├── test-extraction.js
+│       └── test-package-cleanup.mjs # Packaging/zip-cleanup regression tests
+├── CHANGELOG.md             # Release notes
 ├── PRIVACY.md               # Privacy policy
 ├── STORE_LISTING.md         # Chrome Web Store listing
+├── PUBLISHING_AUDIT.md      # Publishing audit & status
 ├── .gitignore               # Git ignore rules
 └── README.md                # This file
 ```
@@ -168,15 +179,26 @@ The extension injects a content script into each tab that:
 3. Falls back further to metadata (title, meta description, headings, first paragraphs)
 4. Truncates to 4,000 characters per tab for efficiency
 
+Special handling:
+
+- **Closed shadow DOM**: A companion script (`shadow-monkeypatch-world.js`) runs in the MAIN execution world to capture references to shadow roots at `attachShadow` time. This makes content in closed shadow DOMs (e.g., Skilljar on Vue 3) accessible for extraction.
+- **Google Docs**: Text rendered on `<canvas>` is recovered by parsing the `DOCS_modelChunk` JSON embedded in the page.
+- **Dynamic pages**: Async extraction waits up to 3 seconds for JavaScript-heavy pages (Atlassian, Google Dev Blog, etc.) to hydrate before extracting.
+- **Unicode-safe**: Uses `\p{L}|\p{N}` regex so Cyrillic, CJK, and other non-Latin text is preserved.
+
 ### Summarization (`background.js`)
 
-The service worker:
+The service worker delegates to `api/codex-client.js` for Codex API handling:
 
 1. Collects content from all selected tabs or reading list entries
 2. Builds a structured prompt with page titles and URLs
 3. Truncates if content exceeds token limits
 4. Sends to the ChatGPT Codex API (`https://chatgpt.com/backend-api/codex/responses`) with `stream: true`
+   - Uses a model fallback chain: `gpt-5.6-luna` → `gpt-5.6-terra` → `gpt-5.5`
+   - If the backend rejects a model with a 400 "model not supported" error, automatically retries with the next candidate
 5. Parses the SSE stream (`response.output_text.delta` events) to build the summary
+   - Handles malformed SSE data lines by checking error *type* (`instanceof SyntaxError`) instead of string matching
+   - This makes parsing resilient to V8 version changes (e.g., Node 24 vs 26 error message differences)
 6. Returns the summary to the popup or sidebar panel
 
 ### Display Mode Management (`background.js`)
@@ -222,6 +244,34 @@ The popup and sidebar share a common `UIController` class (`ui-controller.js`):
 | Reading List empty                        | Add pages to your Reading List first (right-click page → "Add to Reading List") |
 | Sidebar not showing                       | Click the 📌 Sidebar button in the popup to switch to sidebar mode              |
 | Summary seems incorrect                   | Try a different language or check the debug console for API errors              |
+
+## Development
+
+### Running Tests
+
+```bash
+# Unit tests (extraction, background logic, packaging)
+npm run test:unit
+
+# E2E tests (requires Playwright browsers installed)
+npm run test:e2e
+
+# All tests
+npm test
+```
+
+### Building
+
+```bash
+# Package the extension into a ZIP in dist/
+npm run build
+
+# Validate manifest-declared resources exist
+npm run validate:extension
+
+# Validate statically imported ES modules are present
+npm run validate:imports
+```
 
 ## Privacy
 
