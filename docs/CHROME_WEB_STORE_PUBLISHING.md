@@ -1,16 +1,20 @@
 # Automated Chrome Web Store Publishing
 
 This repo can publish new versions of the extension to the Chrome Web Store
-automatically when a version tag is pushed. The workflow lives in
+automatically when the Release workflow is dispatched. The workflow lives in
 [`.github/workflows/release.yml`](../.github/workflows/release.yml) — the
 `publish-to-chrome-web-store` job runs after packaging and calls the Chrome
 Web Store Publish API via `chrome-webstore-upload-cli`.
 
 ## What "automated" means
 
-- Pushing a tag like `v1.2.5` triggers the workflow.
-- The workflow runs tests, builds the ZIP, creates a GitHub Release, then
-  uploads the ZIP to your Chrome Web Store item and submits it for review.
+- Dispatching the workflow with a version (e.g. `1.2.5`) triggers the pipeline.
+- The workflow runs tests, builds the ZIP, creates the git tag and GitHub
+  Release, then uploads the ZIP to your Chrome Web Store item and submits
+  it for review.
+- Tags and releases are only ever created by CI — never by hand — so every
+  release is guaranteed to have gone through the full test + validate +
+  publish pipeline.
 - Google still reviews each submission (typically minutes to a few days).
   The API cannot skip review. Once approved, the new version goes live
   automatically.
@@ -58,28 +62,23 @@ Treat all three values as secrets.
 
 Once secrets are configured:
 
-```bash
-# 1. Bump manifest.json + CHANGELOG.md, commit, push to main
-# 2. Tag and push
-git tag v1.2.5
-git push origin v1.2.5
-```
+1. Bump `manifest.json` version and update `CHANGELOG.md`, commit, push to `main`.
+2. Go to the repo's **Actions** tab → **Release** workflow → **Run workflow**.
+3. Enter the new version (e.g. `1.2.5`) and click **Run workflow**.
 
 GitHub Actions will:
 
 1. Run the unit + E2E tests (via `reusable-checks.yml`).
-2. Validate that `manifest.json` version matches the tag.
+2. Validate that `manifest.json` version matches the input.
+3. Refuse to proceed if `v<version>` already exists on the remote (forces a real bump).
 3. Build and validate `dist/simple-tab-summarizer-v1.2.5.zip`.
-4. Create a GitHub Release with the ZIP attached.
-5. Upload the ZIP to the Chrome Web Store and submit it for review.
+4. Create and push the `v1.2.5` git tag.
+5. Create a GitHub Release with the ZIP attached.
+6. Upload the ZIP to the Chrome Web Store and submit it for review.
 
 You'll get an email from Google when the review completes.
 
 ## Manual publish (fallback)
-
-You can still trigger the workflow manually from the Actions tab
-(`Run workflow` on the Release workflow), providing the version as input.
-That path also runs the publish step if secrets are configured.
 
 If you ever need to publish without touching CI, download the ZIP artifact
 from the workflow run and upload it via the developer console.

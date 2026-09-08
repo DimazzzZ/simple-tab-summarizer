@@ -275,17 +275,16 @@ npm run validate:imports
 
 ### Releasing
 
-Releases are automated. Bump `manifest.json`, update `CHANGELOG.md`, push, then:
+Releases are automated and driven entirely by CI — tags and releases are never
+created by hand. To cut a release:
 
-```bash
-git tag v1.2.5
-git push origin v1.2.5
-```
+1. Bump the `manifest.json` version and update `CHANGELOG.md`, then commit and push.
+2. In the **Actions** tab, run the **Release** workflow and enter the version (e.g. `1.2.5`).
 
-The [`Release` workflow](.github/workflows/release.yml) runs tests, builds the
-ZIP, creates a GitHub Release, and — if Chrome Web Store credentials are
-configured — uploads the ZIP to the store and submits it for review. See
-[docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
+The [`Release` workflow](.github/workflows/release.yml) runs tests, builds and
+validates the ZIP, creates the git tag and GitHub Release, and — if Chrome Web
+Store credentials are configured — uploads the ZIP to the store and submits it
+for review. See [docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
 for one-time OAuth setup.
 
 ## Privacy

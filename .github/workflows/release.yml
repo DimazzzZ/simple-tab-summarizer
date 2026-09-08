@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
@@ -38,15 +35,17 @@ jobs:
       - name: Resolve release version
         id: resolve-version
         run: |
-          # workflow_dispatch → inputs.version
-          # push tag         → github.ref_name (strip leading "v")
-          if [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-          fi
+          # Version comes from the workflow_dispatch input.
+          VERSION="${{ inputs.version }}"
+          # Tolerate a leading "v" if the user typed one (e.g. "v1.2.5").
+          VERSION="${VERSION#v}"
           if [ -z "$VERSION" ]; then
-            echo "❌ Could not resolve release version"
+            echo "❌ Version input is required (e.g. 1.2.5)"
+            exit 1
+          fi
+          # Guard: refuse to reuse an existing tag — forces a real version bump.
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag v$VERSION already exists on origin. Bump the version."
             exit 1
           fi
           echo "Resolved version: $VERSION"
@@ -134,8 +133,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.resolve-version.outputs.version }}
         run: |
+          # Create and push the git tag at the current commit
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "✅ Created and pushed tag v$VERSION"
+
+          # Create the GitHub Release pointing at that tag
           printf '## Simple Tab Summarizer v%s\n\n### Chrome Web Store\nInstall the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol)\n\n---\n' "$VERSION" > release-notes.md
           gh release create "v$VERSION" "dist/simple-tab-summarizer-v$VERSION.zip" --title "v$VERSION" --notes-file release-notes.md --generate-notes
+          echo "✅ Created GitHub Release v$VERSION"
 
   publish-to-chrome-web-store:
     needs: package
