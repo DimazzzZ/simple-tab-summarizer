@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-08-31
+
+### Fixed
+- **Summarization Failure After Model Retirement**: Migrated the default model from the retired `gpt-5.4` to `gpt-5.6-luna`, resolving the `API error (400): The 'gpt-5.4' model is not supported when using Codex with a ChatGPT account.` failure. OpenAI retired `gpt-5.4`/`gpt-5.4-mini` from Codex for ChatGPT-account sign-in on 2026-08-31.
+
+### Added
+- **Model Fallback Chain**: When the ChatGPT/Codex backend rejects a model slug with a "model not supported" 400, the extension now automatically retries with the next candidate (`gpt-5.6-luna` → `gpt-5.6-terra` → `gpt-5.5`), preventing a future model retirement from hard-breaking summary generation.
+
+---
+
 ## [1.2.3] - 2026-08-28
 
 ### Fixed

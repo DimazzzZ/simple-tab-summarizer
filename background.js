@@ -7,12 +7,14 @@
  * Includes ChatGPT-Account-ID header when authenticated via ChatGPT OAuth.
  */
 
+import { summarizeViaCodex } from './api/codex-client.js';
+
 // ============================================
 // Configuration
 // ============================================
 
-const CHATGPT_API_URL = 'https://chatgpt.com/backend-api/codex/responses';
-const OPENAI_MODEL = 'gpt-5.4';
+// (CHATGPT_API_URL, OPENAI_MODEL_CANDIDATES, and the model-unsupported classifier
+//  now live in api/codex-client.js — see summarizeViaCodex.)
 
 const OAUTH_CONFIG = {
   authorizationEndpoint: 'https://auth.openai.com/oauth/authorize',
@@ -461,10 +463,19 @@ async function handleSummarizeRequest(contents, tabCount, language = 'English', 
       return { text: null, error: 'Not connected. Please connect to ChatGPT first.' };
     }
 
+    const accountId = await getAccountId();
     const userMessage = buildUserMessage(contents);
     const truncatedMessage = truncateMessage(userMessage, 100000);
-    const summary = await callOpenAIAPI(truncatedMessage, tabCount, accessToken, language, summaryLevel, signal);
-    
+    const summary = await summarizeViaCodex({
+      message: truncatedMessage,
+      tabCount,
+      accessToken,
+      accountId,
+      language,
+      summaryLevel,
+      signal
+    });
+
     currentSummarizationAbortController = null;
     return { text: summary, error: null };
   } catch (error) {
@@ -500,248 +511,7 @@ function truncateMessage(message, maxLength) {
   return message.substring(0, maxLength) + '\n[content clipped]';
 }
 
-async function callOpenAIAPI(message, tabCount, accessToken, language = 'English', summaryLevel = 'short', signal = null) {
-  const accountId = await getAccountId();
-  console.log('[API] Using account_id:', accountId);
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
-  };
-  
-  // Add ChatGPT-Account-ID header if we have it
-  if (accountId) {
-    headers['ChatGPT-Account-ID'] = accountId;
-  }
-  
-  const langInstruction = `Output must be in ${language}.`;
-  const noiseFilter = 'The text below is raw text extracted from a webpage. It may contain navigation, headers, footers, sidebars, ads, and other non-content elements. Identify the actual main content and summarize only that — ignore UI chrome, menus, links, and boilerplate.';
-  const levelInstructions = {
-    short: tabCount <= 1
-      ? 'Summarize the page content in ONE very concise paragraph (max 80 words). Focus only on the core message. Return only the paragraph — no headings, no bullets, no extra text.'
-      : 'For each page section marked "=== PAGE N ===", write ONE very concise paragraph (max 60 words) summarizing that page. Focus only on the core message. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.',
-    medium: tabCount <= 1
-      ? 'Summarize the page content in ONE paragraph (max 120 words). Cover the main points and key takeaways. Return only the paragraph — no headings, no bullets, no extra text.'
-      : 'For each page section marked "=== PAGE N ===", write ONE paragraph (max 100 words) summarizing that page. Cover the main points and key takeaways. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.',
-    detailed: tabCount <= 1
-      ? 'Provide a detailed summary of the page content (max 300 words). Cover all important points, key details, and notable context. You may use multiple paragraphs. Return only the summary — no headings, no bullets, no extra text.'
-      : 'For each page section marked "=== PAGE N ===", provide a detailed summary (max 250 words) covering all important points and key details. You may use multiple paragraphs per section. Separate each summary with "=== PAGE N ===" matching the input. No headings, no bullets, no extra text. Return only the summaries.'
-  };
-  const instructions = `${langInstruction} ${noiseFilter} ${levelInstructions[summaryLevel] || levelInstructions.short}`;
-  
-  const body = JSON.stringify({
-    model: OPENAI_MODEL,
-    instructions: instructions,
-    input: [{
-      type: 'message',
-      role: 'user',
-      content: [{ type: 'input_text', text: message }]
-    }],
-    reasoning: { effort: 'low' },
-    store: false,
-    stream: true
-  });
-
-  let response = await fetch(CHATGPT_API_URL, {
-    method: 'POST',
-    headers,
-    body,
-    signal
-  });
-
-  // If reasoning is rejected, retry without it
-  if (!response.ok) {
-    const errText = await response.text();
-    if (response.status === 400 && errText.includes('Unsupported parameter')) {
-      console.log('[API] Retrying without optional params...');
-      const fallbackBody = JSON.stringify({
-        model: OPENAI_MODEL,
-        instructions: instructions,
-        input: [{
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'input_text', text: message }]
-        }],
-        store: false,
-        stream: true
-      });
-      response = await fetch(CHATGPT_API_URL, {
-        method: 'POST',
-        headers,
-        body: fallbackBody,
-        signal
-      });
-      if (!response.ok) {
-        const retryErrText = await response.text();
-        console.error('[API] Error response:', response.status, retryErrText.substring(0, 500));
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Authentication failed. Please reconnect to ChatGPT.');
-        }
-        throw new Error(`API error (${response.status}): ${retryErrText.substring(0, 200)}`);
-      }
-    } else {
-      console.error('[API] Error response:', response.status, errText.substring(0, 500));
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Authentication failed. Please reconnect to ChatGPT.');
-      }
-      throw new Error(`API error (${response.status}): ${errText.substring(0, 200)}`);
-    }
-  }
-
-  // Check if response is SSE (streaming)
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream')) {
-    console.log('[API] Detected SSE content-type, using stream parser');
-    return parseSSEStream(response.body);
-  }
-  
-  // Try JSON first, but fall back to SSE if body starts with "event:" or "data:"
-  const rawText = await response.text();
-  console.log('[API] Response text preview:', rawText.substring(0, 100));
-  
-  if (rawText.startsWith('event:') || rawText.startsWith('data:')) {
-    console.log('[API] Response is SSE format despite JSON content-type, using stream parser');
-    return parseSSEText(rawText);
-  }
-  
-  try {
-    const data = JSON.parse(rawText);
-    console.log('[API] Response keys:', Object.keys(data));
-    
-    if (data.output_text) {
-      return data.output_text;
-    }
-    
-    if (data.output && Array.isArray(data.output)) {
-      for (const item of data.output) {
-        if (item.content && Array.isArray(item.content)) {
-          for (const content of item.content) {
-            if (content.text) {
-              return content.text;
-            }
-          }
-        }
-      }
-    }
-    
-    return JSON.stringify(data, null, 2);
-  } catch (e) {
-    console.error('[API] JSON parse error:', e.message);
-    throw new Error(`Failed to parse API response: ${e.message}`);
-  }
-}
-
-async function parseSSEStream(body) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let fullText = '';
-  let completed = false;
-  let receivedDeltas = false;
-  
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-      
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith(':')) continue;
-        
-        if (trimmed.startsWith('data:')) {
-          const dataStr = trimmed.substring(5).trim();
-          try {
-            const event = JSON.parse(dataStr);
-            const eventType = event.type;
-            
-            if (eventType === 'response.output_text.delta' && event.delta) {
-              fullText += event.delta;
-              receivedDeltas = true;
-            } else if (eventType === 'response.output_item.done') {
-              // Only use output_item.done text if we didn't receive deltas
-              if (!receivedDeltas) {
-                const item = event.item;
-                if (item && item.content) {
-                  for (const c of item.content) {
-                    if (c.text) fullText += c.text;
-                  }
-                }
-              }
-            } else if (eventType === 'response.completed') {
-              completed = true;
-            } else if (eventType === 'response.error') {
-              throw new Error(event.error?.message || 'Stream error');
-            }
-          } catch (e) {
-            if (e.message && !e.message.includes('Unexpected token')) {
-              throw e;
-            }
-          }
-        }
-      }
-      
-      if (completed) break;
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  
-  if (!fullText && !completed) {
-    return '[No content received from stream]';
-  }
-  
-  return fullText || '[Stream completed with no content]';
-}
-
-function parseSSEText(text) {
-  const lines = text.split('\n');
-  let fullText = '';
-  let completed = false;
-  let receivedDeltas = false;
-  
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith(':')) continue;
-    
-    if (trimmed.startsWith('data:')) {
-      const dataStr = trimmed.substring(5).trim();
-      try {
-        const event = JSON.parse(dataStr);
-        const eventType = event.type;
-        
-        if (eventType === 'response.output_text.delta' && event.delta) {
-          fullText += event.delta;
-          receivedDeltas = true;
-        } else if (eventType === 'response.output_item.done') {
-          // Only use output_item.done text if we didn't receive deltas
-          if (!receivedDeltas) {
-            const item = event.item;
-            if (item && item.content) {
-              for (const c of item.content) {
-                if (c.text) fullText += c.text;
-              }
-            }
-          }
-        } else if (eventType === 'response.completed') {
-          completed = true;
-        } else if (eventType === 'response.error') {
-          throw new Error(event.error?.message || 'Stream error');
-        }
-      } catch (e) {
-        if (e.message && !e.message.includes('Unexpected token')) {
-          throw e;
-        }
-      }
-    }
-  }
-  
-  if (!fullText && !completed) {
-    return '[No content received from stream]';
-  }
-  
-  return fullText || '[Stream completed with no content]';
-}
+// ============================================
+// Exports for unit tests
+// ============================================
+export { buildUserMessage, truncateMessage };

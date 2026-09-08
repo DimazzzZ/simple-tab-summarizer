@@ -10,13 +10,20 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Node 24 is the release baseline. Node 26 is covered because a
+        # Node-26-specific V8 JSON error-message change exposed the SSE parser
+        # fragility fixed in api/codex-client.js — CI must guard that path.
+        node-version: ['24', '26']
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -49,6 +56,9 @@ jobs:
           "
           node scripts/validate-extension-files.mjs .
 
+      - name: Validate ESM import graph
+        run: node scripts/validate-extension-imports.mjs .
+
       - name: Check required files exist
         run: |
           for file in manifest.json background.js content.js popup.html popup.js sidebar.html sidebar.js ui-controller.js styles.css PRIVACY.md README.md; do
@@ -68,3 +78,41 @@ jobs:
             fi
           done
           echo "All icon assets present"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install zip utility
+        run: sudo apt-get install -y zip
+
+      - name: Build extension package
+        run: npm run build
+
+      - name: Verify a package ZIP was produced
+        run: |
+          VERSION=$(node -e "console.log(require('./manifest.json').version)")
+          ZIP_FILE="dist/simple-tab-summarizer-v${VERSION}.zip"
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "❌ Expected package not produced: $ZIP_FILE"
+            ls -la dist || true
+            exit 1
+          fi
+          # Exactly one of our packages should remain (cleanup step ran).
+          COUNT=$(find dist -maxdepth 1 -name 'simple-tab-summarizer-v*.zip' | wc -l | tr -d ' ')
+          if [ "$COUNT" != "1" ]; then
+            echo "❌ Expected exactly one package zip in dist/, found $COUNT"
+            find dist -maxdepth 1 -name 'simple-tab-summarizer-v*.zip'
+            exit 1
+          fi
+          echo "✅ Build produced $ZIP_FILE"
