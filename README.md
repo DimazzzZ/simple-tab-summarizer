@@ -273,6 +273,21 @@ npm run validate:extension
 npm run validate:imports
 ```
 
+### Releasing
+
+Releases are automated. Bump `manifest.json`, update `CHANGELOG.md`, push, then:
+
+```bash
+git tag v1.2.5
+git push origin v1.2.5
+```
+
+The [`Release` workflow](.github/workflows/release.yml) runs tests, builds the
+ZIP, creates a GitHub Release, and — if Chrome Web Store credentials are
+configured — uploads the ZIP to the store and submits it for review. See
+[docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
+for one-time OAuth setup.
+
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md) for details on data collection, usage, and handling.
