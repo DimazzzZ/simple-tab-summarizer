@@ -12,6 +12,7 @@ const DOM_IDS = [
   'select-all-btn', 'deselect-all-btn',
   'rl-select-all-btn', 'rl-deselect-all-btn',
   'summary-level-select', 'language-select', 'summarize-btn', 'stop-btn',
+  'provider-select',
   'debug-console', 'debug-section', 'debug-toggle', 'clear-debug-btn',
   'loading-section', 'loading-text', 'progress-fill', 'progress-text',
   'summary-section', 'summary-content', 'expand-summary-btn', 'copy-summary-btn',

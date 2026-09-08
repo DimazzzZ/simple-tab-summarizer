@@ -334,6 +334,39 @@ setRegistry([
 list = await listAvailableProviders('Chinese', { isAuthenticated: false });
 assertEqual(list.length, 0, 'listAvailableProviders returns [] when nothing applies');
 
+// Case F: user provider preference.
+// F1: preference=chatgpt-codex wins over built-in when ChatGPT is usable.
+setRegistry([
+  mockProvider('chrome-builtin', { supports: ['English'], available: true }),
+  mockProvider('chatgpt-codex', { available: true })
+]);
+picked = await selectProvider('English', { isAuthenticated: true, preference: 'chatgpt-codex' });
+assertEqual(picked?.name, 'chatgpt-codex', 'preference=chatgpt-codex is honored over built-in for English');
+
+// F2: preference=chrome-builtin keeps built-in (same as auto here, but explicit).
+picked = await selectProvider('English', { isAuthenticated: true, preference: 'chrome-builtin' });
+assertEqual(picked?.name, 'chrome-builtin', 'preference=chrome-builtin is honored');
+
+// F3: preference=chatgpt-codex but ChatGPT unavailable → falls back to built-in.
+setRegistry([
+  mockProvider('chrome-builtin', { supports: ['English'], available: true }),
+  mockProvider('chatgpt-codex', { available: false })
+]);
+picked = await selectProvider('English', { isAuthenticated: false, preference: 'chatgpt-codex' });
+assertEqual(picked?.name, 'chrome-builtin', 'preference=chatgpt-codex falls back to built-in when ChatGPT unusable');
+
+// F4: preference=chrome-builtin but language unsupported → falls back to ChatGPT.
+setRegistry([
+  mockProvider('chrome-builtin', { supports: ['English'], available: true }),
+  mockProvider('chatgpt-codex', { available: true })
+]);
+picked = await selectProvider('Chinese', { isAuthenticated: true, preference: 'chrome-builtin' });
+assertEqual(picked?.name, 'chatgpt-codex', 'preference=chrome-builtin falls back to ChatGPT for unsupported language');
+
+// F5: preference=auto behaves like the default priority order.
+picked = await selectProvider('English', { isAuthenticated: true, preference: 'auto' });
+assertEqual(picked?.name, 'chrome-builtin', 'preference=auto uses registry priority (built-in first)');
+
 // Restore original registry so other tests see the real providers.
 setRegistry(originalRegistry);
 

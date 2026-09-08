@@ -18,12 +18,14 @@ import { selectProvider } from '../api/providers/index.js';
  * @param {Set<number>} ctx.selectedReadingListIds - Selected reading list indices
  * @param {boolean} ctx.isAuthenticated - Whether user is authenticated
  * @param {Array<string>} [ctx.availableProviders] - List of available provider names
+ * @param {string} [ctx.providerPreference] - User's provider choice
+ *        ('auto' | 'chrome-builtin' | 'chatgpt-codex'). Defaults to 'auto'.
  * @param {Function} ctx.debugLog - Logger function
  * @param {Function} ctx.updateButtonsState - Button state updater
  * @returns {Promise<void>}
  */
 export async function handleSummarize(ctx) {
-  const { source, dom, groupTabs, selectedTabIds, readingListEntries, selectedReadingListIds, isAuthenticated, debugLog, updateButtonsState } = ctx;
+  const { source, dom, groupTabs, selectedTabIds, readingListEntries, selectedReadingListIds, isAuthenticated, providerPreference = 'auto', debugLog, updateButtonsState } = ctx;
 
   let itemCount = 0;
   if (source === 'currentTab') itemCount = 1;
@@ -46,7 +48,7 @@ export async function handleSummarize(ctx) {
 
   try {
     // Pick the best provider for this language / auth state before doing any work.
-    const provider = await selectProvider(summaryLanguage, { isAuthenticated });
+    const provider = await selectProvider(summaryLanguage, { isAuthenticated, preference: providerPreference });
     if (!provider) {
       if (summaryLanguage !== 'English') {
         showError(dom, `${summaryLanguage} is only supported via ChatGPT. Please sign in to continue.`);
@@ -56,7 +58,7 @@ export async function handleSummarize(ctx) {
       debugLog(`No provider available for ${summaryLanguage}`, 'warn');
       return;
     }
-    debugLog(`Using provider: ${provider.name}`);
+    debugLog(`Using provider: ${provider.name} (preference: ${providerPreference})`);
 
     let contents = [];
     if (source === 'currentTab') {

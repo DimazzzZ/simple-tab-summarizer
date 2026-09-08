@@ -33,9 +33,29 @@ const PROVIDERS = [
  * @param {string} language human-readable language name
  * @param {object} [ctx] context passed to provider.isAvailable()
  * @param {boolean} [ctx.isAuthenticated] pre-resolved auth state
+ * @param {string} [ctx.preference] user's preferred provider name
+ *        ('chrome-builtin' | 'chatgpt-codex' | 'auto'). When set to a concrete
+ *        provider that is usable for this language, it wins. 'auto' (default)
+ *        falls back to registry priority order (built-in first).
  * @returns {Promise<{name:string, impl:object}|null>}
  */
 export async function selectProvider(language = 'English', ctx = {}) {
+  const preference = ctx.preference || 'auto';
+
+  // Honor an explicit preference first: if the preferred provider supports the
+  // language and is available, use it. If it can't (e.g. built-in doesn't
+  // support the language, or ChatGPT isn't signed in), fall through to auto so
+  // the user still gets a working summary rather than a hard failure.
+  if (preference !== 'auto') {
+    const preferred = PROVIDERS.find(p => p.name === preference);
+    if (preferred) {
+      const langOk = !preferred.impl.supportsLanguage || preferred.impl.supportsLanguage(language);
+      if (langOk && await preferred.impl.isAvailable(language, ctx)) {
+        return preferred;
+      }
+    }
+  }
+
   for (const provider of PROVIDERS) {
     if (provider.impl.supportsLanguage && !provider.impl.supportsLanguage(language)) {
       continue;

@@ -31,6 +31,9 @@ export class UIController {
     this.selectedReadingListUrls = new Set();
     this.isAuthenticated = false;
     this.availableProviders = [];
+    // User's provider choice: 'auto' | 'chrome-builtin' | 'chatgpt-codex'.
+    // 'auto' = registry priority (built-in first when available).
+    this.providerPreference = 'auto';
     this.allGroups = [];
     this.debugEnabled = false;
     this.currentSource = SourceType.CURRENT_TAB;
@@ -55,12 +58,14 @@ export class UIController {
   }
 
   async loadSettings() {
-    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage', 'summaryLevel']);
+    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage', 'summaryLevel', 'providerPreference']);
     this.debugEnabled = result.debugEnabled || false;
     this.dom.debugToggle.checked = this.debugEnabled;
     this.updateDebugVisibility();
     if (result.summaryLanguage) this.dom.languageSelect.value = result.summaryLanguage;
     if (result.summaryLevel) this.dom.summaryLevelSelect.value = result.summaryLevel;
+    if (result.providerPreference) this.providerPreference = result.providerPreference;
+    if (this.dom.providerSelect) this.dom.providerSelect.value = this.providerPreference;
     await this.updateModeToggleLabel();
     await this.loadSharedContext();
     this.setupStorageListener();
@@ -184,9 +189,20 @@ export class UIController {
       this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`);
       // Provider availability depends on language (built-in supports only 5 langs).
       await this.refreshAvailableProviders();
-      updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders);
+      updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders, dom.languageSelect.value);
       this.updateButtonsState();
     });
+    if (dom.providerSelect) {
+      dom.providerSelect.addEventListener('change', async () => {
+        this.providerPreference = dom.providerSelect.value || 'auto';
+        await this.saveSetting('providerPreference', this.providerPreference);
+        this.debugLog(`Provider preference changed to: ${this.providerPreference}`);
+        // Preference doesn't change which providers exist, but the auth-text
+        // hint depends on it (e.g. "Using ChatGPT" vs "Using built-in").
+        updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders, dom.languageSelect.value, this.providerPreference);
+        this.updateButtonsState();
+      });
+    }
     dom.summaryLevelSelect.addEventListener('change', async () => { await this.saveSetting('summaryLevel', dom.summaryLevelSelect.value); this.debugLog(`Summary level changed to: ${dom.summaryLevelSelect.value}`); });
     this._tabCleanup = setupTabLifecycleListeners(this, () => this.debouncedRefreshSelectedGroup());
     this._readingListCleanup = setupReadingListLifecycleListeners(this, () => this.debouncedRefreshReadingList());
@@ -240,12 +256,12 @@ export class UIController {
     this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this), []);
     // Now that we know auth state, probe providers and re-render the auth UI.
     await this.refreshAvailableProviders();
-    updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders);
+    updateAuthUI(this.dom, this.isAuthenticated, this.availableProviders, this.dom.languageSelect?.value || 'English', this.providerPreference);
     this.updateButtonsState();
   }
 
   updateAuthUI(authenticated) {
-    updateAuthUI(this.dom, authenticated, this.availableProviders);
+    updateAuthUI(this.dom, authenticated, this.availableProviders, this.dom.languageSelect?.value || 'English', this.providerPreference);
     this.updateButtonsState();
   }
 
@@ -400,6 +416,7 @@ export class UIController {
       selectedReadingListIds: this.selectedReadingListIds,
       isAuthenticated: this.isAuthenticated,
       availableProviders: this.availableProviders,
+      providerPreference: this.providerPreference,
       debugLog: this.debugLog.bind(this),
       updateButtonsState: () => this.updateButtonsState()
     });

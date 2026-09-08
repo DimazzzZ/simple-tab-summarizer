@@ -8,6 +8,11 @@ const AUTH_ICONS = {
   disconnected: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
 };
 
+// Languages the built-in Summarizer can produce. Kept in sync with
+// api/providers/chrome-builtin.js SUPPORTED_LANGUAGES. Duplicated here so this
+// module stays self-contained and doesn't depend on the provider layer.
+const BUILTIN_LANGUAGES = ['English', 'Japanese', 'Spanish', 'German', 'French'];
+
 /**
  * Checks authentication status via background script.
  * @param {Object} dom - DOM references
@@ -35,33 +40,54 @@ export async function checkAuthStatus(dom, debugLog, availableProviders = []) {
  * @param {Object} dom - DOM references
  * @param {boolean} authenticated - Whether user is authenticated
  * @param {Array<string>} [availableProviders] - List of available provider names
+ * @param {string} [language] - Currently selected output language
+ * @param {string} [preference] - User's provider choice
+ *        ('auto' | 'chrome-builtin' | 'chatgpt-codex')
  */
-export function updateAuthUI(dom, authenticated, availableProviders = []) {
+export function updateAuthUI(dom, authenticated, availableProviders = [], language = 'English', preference = 'auto') {
+  const hasBuiltin = availableProviders.includes('chrome-builtin');
+  const hasChatgpt = availableProviders.includes('chatgpt-codex');
   if (authenticated) {
     dom.authIcon.classList.remove('disconnected');
     dom.authIcon.classList.add('connected');
     dom.authIcon.innerHTML = AUTH_ICONS.connected;
-    if (availableProviders.includes('chrome-builtin') && availableProviders.includes('chatgpt-codex')) {
-      dom.authText.textContent = 'Ready (built-in + ChatGPT)';
-    } else if (availableProviders.includes('chatgpt-codex')) {
-      dom.authText.textContent = 'Ready (ChatGPT)';
-    } else {
-      dom.authText.textContent = 'Connected to ChatGPT';
-    }
+    dom.authText.textContent = authStatusText(hasBuiltin, hasChatgpt, preference);
     dom.connectBtn.classList.add('hidden');
     dom.disconnectBtn.classList.remove('hidden');
   } else {
     dom.authIcon.classList.remove('connected');
     dom.authIcon.classList.add('disconnected');
     dom.authIcon.innerHTML = AUTH_ICONS.disconnected;
-    if (availableProviders.includes('chrome-builtin')) {
-      dom.authText.textContent = 'Ready (built-in AI)';
+    if (hasBuiltin) {
+      dom.authText.textContent = preference === 'chatgpt-codex'
+        ? 'Sign in to use ChatGPT (built-in AI ready as fallback)'
+        : 'Ready (built-in AI) — or sign in for ChatGPT';
+    } else if (!BUILTIN_LANGUAGES.includes(language)) {
+      // Built-in AI doesn't support this language, and the user isn't signed
+      // in to ChatGPT — tell them exactly what to do.
+      dom.authText.textContent = `Sign in to ChatGPT for ${language} (built-in AI supports only EN, JA, ES, DE, FR)`;
     } else {
       dom.authText.textContent = 'Not ready (sign in to ChatGPT)';
     }
     dom.connectBtn.classList.remove('hidden');
     dom.disconnectBtn.classList.add('hidden');
   }
+}
+
+/**
+ * Builds the auth-row status text for the authenticated case, honoring the
+ * user's provider preference so they can see which backend will actually run.
+ * @param {boolean} hasBuiltin
+ * @param {boolean} hasChatgpt
+ * @param {string} preference 'auto' | 'chrome-builtin' | 'chatgpt-codex'
+ * @returns {string}
+ */
+function authStatusText(hasBuiltin, hasChatgpt, preference) {
+  if (preference === 'chrome-builtin' && hasBuiltin) return 'Using built-in AI (on-device)';
+  if (preference === 'chatgpt-codex' && hasChatgpt) return 'Using ChatGPT';
+  if (hasBuiltin && hasChatgpt) return 'Ready (built-in + ChatGPT)';
+  if (hasChatgpt) return 'Ready (ChatGPT)';
+  return 'Connected to ChatGPT';
 }
 
 /**

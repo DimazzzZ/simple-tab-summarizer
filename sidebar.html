@@ -93,6 +93,14 @@
           <option value="readingList">Reading List</option>
         </select>
       </div>
+      <div class="form-group">
+        <label for="provider-select">AI Provider</label>
+        <select id="provider-select" class="provider-select">
+          <option value="auto" selected>Automatic (built-in AI first)</option>
+          <option value="chrome-builtin">Built-in AI (on-device, private)</option>
+          <option value="chatgpt-codex">ChatGPT (sign-in, 40+ languages)</option>
+        </select>
+      </div>
       <div id="group-section" class="form-group hidden">
         <label for="group-select">Select Tab Group</label>
         <select id="group-select" class="group-select">
