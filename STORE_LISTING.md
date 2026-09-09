@@ -16,6 +16,13 @@ Features:
 - Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
 - Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
 
+What's new in 1.3.0:
+- Zero-Auth Built-in AI: Now summarizes on-device with Chrome's built-in AI (Gemini Nano) by default — no sign-up, no API key, nothing leaves your device. Requires Chrome 138+ with supported hardware. ChatGPT sign-in is now optional.
+- Smart Provider Selection: Built-in AI handles English, Japanese, Spanish, German, and French locally; other languages use ChatGPT when you're signed in. The status shows which AI is in use.
+- Choose Your AI: A new AI Provider option lets you pick Automatic, Built-in AI (on-device, private), or ChatGPT (sign-in, 40+ languages), and remembers your choice.
+- Summarize Without an Account: If built-in AI is available, the Summarize button works right away — the old "connect to ChatGPT first" requirement is gone.
+- On-Device Model Download: On first use, a progress indicator shows the built-in model downloading. No data leaves your device.
+
 What's new in 1.2.4:
 - Summarization Fix: Restored summaries after OpenAI retired the previous model — now uses gpt-5.6-luna
 - Model Fallback: Automatically retries with an alternate model if one becomes unavailable, so summaries keep working through future model changes
