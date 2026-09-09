@@ -342,6 +342,28 @@ body.sidebar-mode .action-bar {
   display: none;
 }
 
+/*
+ * Subtle variant: used when the button represents an OPTIONAL action (e.g.
+ * "Sign in to ChatGPT" while built-in AI is already ready). Renders as a
+ * low-emphasis text link so the primary filled style stays reserved for
+ * actions the user actually needs to take.
+ */
+.btn-compact.btn-subtle {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: transparent;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.btn-compact.btn-subtle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-primary-hover);
+  text-decoration-thickness: 2px;
+}
+
 /* Empty state compact (inside config card) */
 .empty-state-compact {
   display: flex;

@@ -51,6 +51,11 @@ export function updateAuthUI(dom, authenticated, availableProviders = [], langua
   // and a button). Detail goes into the title tooltip.
   let label;
   let tooltip = '';
+  // When at least one provider is already usable, signing in is OPTIONAL.
+  // We render the Connect control as a subtle text link in that case, and
+  // as a primary filled button when sign-in is the ONLY way to summarize.
+  let connectEmphasis = 'primary'; // 'primary' | 'subtle'
+  let connectLabel = 'Sign in';
   if (authenticated) {
     dom.authIcon.classList.remove('disconnected');
     dom.authIcon.classList.add('connected');
@@ -70,16 +75,26 @@ export function updateAuthUI(dom, authenticated, availableProviders = [], langua
         label = 'Built-in AI ready';
         tooltip = 'On-device built-in AI is ready. Sign in for ChatGPT if you prefer.';
       }
+      // Built-in AI works — sign-in is optional. De-emphasize the control.
+      connectEmphasis = 'subtle';
+      connectLabel = 'Sign in to ChatGPT';
     } else if (!BUILTIN_LANGUAGES.includes(language)) {
       // Built-in AI doesn't support this language, and the user isn't signed in.
       label = `Sign in for ${language}`;
       tooltip = `Built-in AI supports only English, Japanese, Spanish, German, French. Sign in to ChatGPT to summarize in ${language}.`;
+      connectEmphasis = 'primary';
+      connectLabel = 'Sign in';
     } else {
       label = 'Not ready';
       tooltip = 'Sign in to ChatGPT to summarize.';
+      connectEmphasis = 'primary';
+      connectLabel = 'Sign in';
     }
     dom.connectBtn.classList.remove('hidden');
     dom.disconnectBtn.classList.add('hidden');
+    // Apply emphasis + label to the Connect button.
+    dom.connectBtn.classList.toggle('btn-subtle', connectEmphasis === 'subtle');
+    setConnectBtnText(dom, connectLabel);
   }
   dom.authText.textContent = label;
   dom.authText.title = tooltip || label;
@@ -146,7 +161,11 @@ export async function handleConnect(dom, debugLog, showError, hideError) {
     return false;
   } finally {
     dom.connectBtn.disabled = false;
-    setConnectBtnText(dom, 'Connect to ChatGPT');
+    // Don't hard-code the label here: updateAuthUI (called via the controller's
+    // checkAuthStatus after connect) sets the correct contextual label
+    // ("Sign in to ChatGPT" when built-in is ready, "Sign in" otherwise).
+    // We only need to clear the transient "Connecting..." state; the next
+    // updateAuthUI pass will overwrite text + class.
   }
 }
 
