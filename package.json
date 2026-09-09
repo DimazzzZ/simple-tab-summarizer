@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "npx playwright test",
-    "test:unit": "node tests/unit/test-extraction.js && node tests/unit/test-background.js && node tests/unit/test-providers.js && node tests/unit/test-package-cleanup.mjs",
+    "test:unit": "node tests/unit/test-extraction.js && node tests/unit/test-background.js && node tests/unit/test-providers.js && node tests/unit/test-auth-ui.js && node tests/unit/test-html-invariants.mjs && node tests/unit/test-package-cleanup.mjs && node tests/unit/test-whats-new.mjs",
     "test:e2e": "npx playwright test tests/e2e/",
     "validate:extension": "node scripts/validate-extension-files.mjs .",
     "validate:imports": "node scripts/validate-extension-imports.mjs .",
-    "build": "npm run build:extension",
+    "whatsnew:data": "node scripts/generate-whats-new-data.mjs",
+    "whatsnew:check": "node scripts/generate-whats-new-data.mjs --check",
+    "build": "npm run whatsnew:data && npm run build:extension",
     "build:extension": "bash scripts/package-extension.sh"
   },
   "devDependencies": {

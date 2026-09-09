@@ -116,3 +116,14 @@ export async function summarize(contents, opts = {}) {
  * Exported for testing: allows injecting mock providers in place.
  */
 export { PROVIDERS };
+
+/**
+ * Raw built-in-model availability, for UI that needs to distinguish
+ * "ready now" from "will download on first use". Returns one of
+ * 'unavailable' | 'downloadable' | 'downloading' | 'available'.
+ * Never throws.
+ * @returns {Promise<'unavailable'|'downloadable'|'downloading'|'available'>}
+ */
+export async function builtinAvailability() {
+  return chromeBuiltin.availability();
+}

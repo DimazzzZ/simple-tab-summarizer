@@ -44,6 +44,13 @@ shopt -u nullglob
 
 # Copy runtime extension files only
 cp "$ROOT_DIR/manifest.json" "$BUILD_DIR/"
+
+# Regenerate the "What's new" data module from STORE_LISTING.md so the packaged
+# ZIP always contains the current release notes. The file is committed too, so
+# import-graph validation and unpacked dev loads both find it — this is
+# belt-and-suspenders for direct `bash package-extension.sh` invocations.
+node "$ROOT_DIR/scripts/generate-whats-new-data.mjs"
+
 cp "$ROOT_DIR/background.js" "$BUILD_DIR/"
 cp "$ROOT_DIR/content.js" "$BUILD_DIR/"
 cp "$ROOT_DIR/shadow-monkeypatch-world.js" "$BUILD_DIR/"

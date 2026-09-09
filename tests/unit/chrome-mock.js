@@ -14,7 +14,10 @@ globalThis.chrome = {
     create: async () => ({ id: 1, url: 'http://test' })
   },
   runtime: {
-    onMessage: { addListener: () => {} }
+    onMessage: { addListener: () => {} },
+    onInstalled: { addListener: () => {} },
+    onStartup: { addListener: () => {} },
+    getManifest: () => ({ version: '0.0.0-test' })
   },
   storage: {
     local: {
@@ -24,7 +27,9 @@ globalThis.chrome = {
     }
   },
   action: {
-    setPopup: () => {}
+    setPopup: () => {},
+    setBadgeText: () => {},
+    setBadgeBackgroundColor: () => {}
   },
   sidePanel: {
     setOptions: async () => {},

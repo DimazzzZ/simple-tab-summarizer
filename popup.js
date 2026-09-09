@@ -16,4 +16,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   await controller.checkAuthStatus();
   await controller.loadTabGroups();
   controller.setupEventListeners();
+  controller.checkWhatsNew();
 });

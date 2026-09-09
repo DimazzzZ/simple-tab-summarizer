@@ -5,7 +5,9 @@
  */
 
 const DOM_IDS = [
-  'mode-toggle', 'auth-icon', 'auth-text', 'connect-btn', 'disconnect-btn',
+  'mode-toggle', 'auth-icon', 'connect-btn', 'disconnect-btn',
+  'whatsnew-banner', 'whatsnew-version', 'whatsnew-open', 'whatsnew-dismiss',
+  'whatsnew-panel', 'whatsnew-panel-title', 'whatsnew-panel-body', 'whatsnew-close',
   'source-select', 'group-section', 'group-select', 'no-groups',
   'readinglist-section', 'readinglist-list', 'no-readinglist',
   'pages-section', 'pages-list',

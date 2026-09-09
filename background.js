@@ -8,6 +8,9 @@
  */
 
 import { summarizeViaCodex } from './api/codex-client.js';
+import { LAST_SEEN_WHATS_NEW_KEY } from './constants/ui-keys.js';
+import { WHATS_NEW_VERSIONS } from './constants/whats-new-data.generated.js';
+import { versionsNewerThan } from './utils/whats-new.js';
 
 // ============================================
 // Configuration
@@ -408,6 +411,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
+
+  if (message.action === 'get_whats_new') {
+    getUnseenWhatsNewVersions()
+      .then(versions => sendResponse({ versions, currentVersion: chrome.runtime.getManifest().version }))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+
+  if (message.action === 'whats_new_seen') {
+    markWhatsNewSeen()
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
 });
 
 // ============================================
@@ -447,6 +464,92 @@ async function setDisplayMode(mode) {
   const mode = await getDisplayMode();
   await setDisplayMode(mode);
 })();
+
+// ============================================
+// "What's new" After-Update Notes
+// ============================================
+//
+// Source of truth for "has unseen notes" is LAST_SEEN_WHATS_NEW_KEY vs the
+// versions present in WHATS_NEW_VERSIONS (generated from STORE_LISTING.md).
+// On a fresh install we record the current version so brand-new users see
+// nothing. On update we refresh the toolbar badge; the popup/sidebar renders
+// the banner + inline notes and calls back with 'whats_new_seen' to clear it.
+
+async function getLastSeenWhatsNewVersion() {
+  const result = await chrome.storage.local.get(LAST_SEEN_WHATS_NEW_KEY);
+  return result[LAST_SEEN_WHATS_NEW_KEY] || null;
+}
+
+async function setLastSeenWhatsNewVersion(version) {
+  await chrome.storage.local.set({ [LAST_SEEN_WHATS_NEW_KEY]: version });
+}
+
+async function getUnseenWhatsNewVersions() {
+  const lastSeen = await getLastSeenWhatsNewVersion();
+  return versionsNewerThan(WHATS_NEW_VERSIONS, lastSeen);
+}
+
+function setWhatsNewBadge() {
+  try {
+    chrome.action.setBadgeText({ text: 'NEW' });
+    chrome.action.setBadgeBackgroundColor({ color: '#4a90d9' });
+  } catch (e) {
+    console.warn('[WhatsNew] Failed to set badge:', e);
+  }
+}
+
+function clearWhatsNewBadge() {
+  try {
+    chrome.action.setBadgeText({ text: '' });
+  } catch (e) {
+    console.warn('[WhatsNew] Failed to clear badge:', e);
+  }
+}
+
+// Recompute the badge from stored state (used on install/update and startup).
+async function refreshWhatsNewBadge() {
+  const unseen = await getUnseenWhatsNewVersions();
+  if (unseen.length > 0) {
+    setWhatsNewBadge();
+  } else {
+    clearWhatsNewBadge();
+  }
+}
+
+// Mark all current notes as seen (user opened or dismissed the banner/panel).
+async function markWhatsNewSeen() {
+  await setLastSeenWhatsNewVersion(chrome.runtime.getManifest().version);
+  clearWhatsNewBadge();
+}
+
+chrome.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
+  const current = chrome.runtime.getManifest().version;
+  try {
+    if (reason === 'install') {
+      // Fresh install: don't show release notes to brand-new users.
+      await setLastSeenWhatsNewVersion(current);
+      clearWhatsNewBadge();
+      return;
+    }
+    if (reason === 'update') {
+      // Leave lastSeen at its old value so unseen versions drive the banner.
+      // If lastSeen was never set (upgraded from a build predating this
+      // feature), seed it from previousVersion so only genuinely new notes show.
+      const lastSeen = await getLastSeenWhatsNewVersion();
+      if (!lastSeen && previousVersion) {
+        await setLastSeenWhatsNewVersion(previousVersion);
+      }
+      await refreshWhatsNewBadge();
+    }
+  } catch (e) {
+    console.warn('[WhatsNew] onInstalled handling failed:', e);
+  }
+});
+
+// Re-derive the badge when the service worker wakes on browser startup.
+chrome.runtime.onStartup.addListener(() => {
+  refreshWhatsNewBadge().catch(() => {});
+});
 
 // ============================================
 // Summarization Logic
