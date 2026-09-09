@@ -8,6 +8,28 @@ import { showLoading, hideLoading, updateProgress, showSummary, showError, hideE
 import { selectProvider } from '../api/providers/index.js';
 
 /**
+ * Decides what download text (if any) to show for a `downloadprogress` event.
+ *
+ * Chrome fires a `downloadprogress` event even when the model is already
+ * cached — typically a single event with `loaded === 1` and no prior partial
+ * progress. Rendering that as "Downloading 100%" flashes a misleading message
+ * on every warm run. We only surface download text once we've actually
+ * observed an in-progress event (`loaded < 1`); a standalone 100% is ignored.
+ *
+ * Pure and side-effect free so it can be unit-tested. `state` is a small
+ * mutable object the caller threads across events for one summarize run.
+ *
+ * @param {number} loaded 0..1 fraction from the downloadprogress event
+ * @param {{sawRealDownload:boolean}} state per-run flag, mutated in place
+ * @returns {string|null} loading text to display, or null to leave it unchanged
+ */
+export function downloadProgressText(loaded, state) {
+  if (loaded < 1) state.sawRealDownload = true;
+  if (!state.sawRealDownload) return null;
+  return `Downloading on-device model: ${Math.round(loaded * 100)}%`;
+}
+
+/**
  * Handles the full summarization flow.
  * @param {Object} ctx - Context object with all dependencies
  * @param {string} ctx.source - Current source type
@@ -97,13 +119,37 @@ export async function handleSummarize(ctx) {
       const userMessage = buildUserMessage(contents);
       const truncatedMessage = truncateMessage(userMessage, 100000);
       try {
-        dom.loadingText.textContent = 'Summarizing on-device (may download model on first use)...';
+        // Initial text before we know model state. onModelLoading (below) fires
+        // right away with the real state and overwrites this.
+        dom.loadingText.textContent = 'Loading on-device model...';
+        // See downloadProgressText: suppresses the misleading "Downloading
+        // 100%" flash on warm (already-cached) runs.
+        const downloadState = { sawRealDownload: false };
         const text = await provider.impl.summarize(truncatedMessage, {
           language: summaryLanguage,
           summaryLevel,
           tabCount: contents.length,
+          onModelLoading: (kind) => {
+            // 'downloading' -> a real model download is pending (first use or
+            // after eviction). 'loading' -> model is cached; we only wait for
+            // it to spin up in memory, so tell the user something's happening.
+            dom.loadingText.textContent = kind === 'downloading'
+              ? 'Downloading on-device model...'
+              : 'Loading on-device model...';
+          },
           onDownloadProgress: (loaded) => {
-            dom.loadingText.textContent = `Downloading on-device model: ${Math.round(loaded * 100)}%`;
+            const msg = downloadProgressText(loaded, downloadState);
+            if (msg !== null) dom.loadingText.textContent = msg;
+          },
+          onProgress: ({ phase, current, total }) => {
+            // Long pages get split into quota-sized chunks. Show which one
+            // we're on so the loader doesn't look frozen.
+            if (phase === 'summarizing') {
+              dom.loadingText.textContent = `Summarizing part ${current} of ${total}...`;
+            } else {
+              // Reduce pass: combining partial summaries into a final one.
+              dom.loadingText.textContent = `Combining summaries (${current} of ${total})...`;
+            }
           }
         });
         summary = { text, error: null };

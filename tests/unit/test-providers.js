@@ -255,6 +255,227 @@ assertEqual(progressSeen[1], 1.0, 'second progress event delivers loaded=1.0');
 if (originalSummarizer === undefined) delete globalThis.Summarizer;
 else globalThis.Summarizer = originalSummarizer;
 
+// Case 7b (regression): a CACHED model must NOT deliver download progress
+// events to the UI. Chrome fires downloadprogress 0 -> 1 on every create(),
+// even when availability() is 'available' and no bytes actually move. Relaying
+// those flashes a misleading "Downloading 0% -> 100%" on every warm run — the
+// exact bug we're locking down. Reproduce with the same event sequence the
+// browser emits for a cached model, and assert none of it reaches the caller.
+{
+  const savedSummarizer = globalThis.Summarizer;
+  let monitorAttached = false;
+  globalThis.Summarizer = {
+    async availability() { return 'available'; },
+    async create(opts) {
+      if (opts.monitor) {
+        monitorAttached = true;
+        const m = { addEventListener(evt, cb) { m[evt] = cb; } };
+        opts.monitor(m);
+        // Simulate the observed browser behavior: fire 0 -> 1 anyway.
+        m.downloadprogress?.({ loaded: 0 });
+        m.downloadprogress?.({ loaded: 1 });
+      }
+      return { async summarize() { return 'ok'; }, destroy() {} };
+    }
+  };
+
+  const seen = [];
+  await builtinSummarize('x', {
+    language: 'English',
+    onDownloadProgress: (p) => seen.push(p)
+  });
+  assertEqual(seen.length, 0,
+    'cached model delivers no download progress events (no misleading flash)');
+  assertEqual(monitorAttached, false,
+    'monitor is not attached when availability() is "available"');
+
+  if (savedSummarizer === undefined) delete globalThis.Summarizer;
+  else globalThis.Summarizer = savedSummarizer;
+}
+
+// Case 7c: onModelLoading fires with the correct kind BEFORE create() so the
+// UI can show activity on warm runs. 'available' -> 'loading' (cached, spin-up
+// only). 'downloadable' -> 'downloading' (real bytes incoming).
+{
+  const savedSummarizer = globalThis.Summarizer;
+  for (const [status, expectedKind] of [
+    ['available', 'loading'],
+    ['downloadable', 'downloading']
+  ]) {
+    let createCalled = false;
+    let kindAtLoad = null;
+    let kindSeenBeforeCreate = false;
+    globalThis.Summarizer = {
+      async availability() { return status; },
+      async create(opts) {
+        createCalled = true;
+        // Even in the download case, don't fire progress here — we only care
+        // that onModelLoading fired first with the right kind.
+        if (opts.monitor) {
+          const m = { addEventListener(evt, cb) { m[evt] = cb; } };
+          opts.monitor(m);
+        }
+        return { async summarize() { return 'ok'; }, destroy() {} };
+      }
+    };
+    await builtinSummarize('x', {
+      language: 'English',
+      onModelLoading: (kind) => {
+        kindAtLoad = kind;
+        // create() must not have been called yet: UI needs the signal upfront.
+        kindSeenBeforeCreate = !createCalled;
+      }
+    });
+    assertEqual(kindAtLoad, expectedKind,
+      `onModelLoading fires with kind="${expectedKind}" when availability="${status}"`);
+    assertEqual(kindSeenBeforeCreate, true,
+      `onModelLoading fires BEFORE create() when availability="${status}"`);
+  }
+  if (savedSummarizer === undefined) delete globalThis.Summarizer;
+  else globalThis.Summarizer = savedSummarizer;
+}
+
+// Case 8 (regression) is placed after restore so it manages its own mock.
+// Gemini Nano rejects oversized input with "The input is too large." — the
+// provider must measure against the model's own inputQuota and trim the text
+// to fit BEFORE calling summarize(), so callers never see that error on long
+// pages. Repro: debug log "Built-in AI failed: The input is too large."
+{
+  const savedSummarizer = globalThis.Summarizer;
+  const INPUT_QUOTA = 4000; // chars
+  let receivedLen = null;
+  globalThis.Summarizer = {
+    async availability() { return 'available'; },
+    async create() {
+      return {
+        inputQuota: INPUT_QUOTA,
+        async measureInputUsage(text) { return text.length; },
+        async summarize(text) {
+          receivedLen = text.length;
+          if (text.length > INPUT_QUOTA) {
+            throw new Error('The input is too large.');
+          }
+          return 'ok';
+        },
+        destroy() {}
+      };
+    }
+  };
+  const bigText = 'x'.repeat(30000);
+  const out = await builtinSummarize(bigText, { language: 'English', summaryLevel: 'short' });
+  assertEqual(out, 'ok', 'summarize() succeeds on oversized input by trimming to inputQuota');
+  assertTrue(receivedLen !== null && receivedLen <= INPUT_QUOTA,
+    `summarize() trims text to <= inputQuota before calling model (got ${receivedLen} <= ${INPUT_QUOTA})`);
+  if (savedSummarizer === undefined) delete globalThis.Summarizer;
+  else globalThis.Summarizer = savedSummarizer;
+}
+
+// Case 9 (regression): long pages must be summarized in FULL via
+// chunk-and-reduce, not truncated to the head. We give the model a small
+// quota and an input far larger than it, seeded with distinct markers spread
+// end-to-end. Every marker must reach the model across the chunk passes, and
+// no summarize() call may exceed the quota.
+// See https://developer.chrome.com/docs/ai/scale-summarization
+{
+  const savedSummarizer = globalThis.Summarizer;
+  const QUOTA = 500; // "tokens"; we define 1 token = 10 chars below
+  const seenChunks = [];
+  let maxUsageSeen = 0;
+  globalThis.Summarizer = {
+    async availability() { return 'available'; },
+    async create() {
+      return {
+        inputQuota: QUOTA,
+        async measureInputUsage(t) { return Math.ceil(t.length / 10); },
+        async summarize(t) {
+          maxUsageSeen = Math.max(maxUsageSeen, Math.ceil(t.length / 10));
+          seenChunks.push(t);
+          // Short marker summary that always fits the quota.
+          return `S[${t.length}]`;
+        },
+        destroy() {}
+      };
+    }
+  };
+  // 60 markers, each padded so the whole input is ~60k chars (>> quota).
+  const NUM_MARKERS = 60;
+  const marked = [];
+  for (let i = 0; i < NUM_MARKERS; i++) marked.push(`MARK${i}` + 'y'.repeat(990));
+  const longText = marked.join('\n\n');
+  const chunkOut = await builtinSummarize(longText, { language: 'English', summaryLevel: 'short' });
+
+  assertTrue(typeof chunkOut === 'string' && chunkOut.length > 0,
+    'chunk-and-reduce returns a non-empty summary for oversized input');
+  const allSeen = seenChunks.join('\u0001');
+  const missing = [];
+  for (let i = 0; i < NUM_MARKERS; i++) {
+    if (!allSeen.includes(`MARK${i}`)) missing.push(i);
+  }
+  assertTrue(missing.length === 0,
+    `chunk-and-reduce covers the whole page — every marker reached the model (missing: ${missing.join(',') || 'none'})`);
+  assertTrue(maxUsageSeen <= QUOTA,
+    `no summarize() call exceeds the input quota (max usage ${maxUsageSeen} <= ${QUOTA})`);
+  assertTrue(seenChunks.length > 1,
+    'oversized input is split into multiple model calls (chunk-and-reduce engaged)');
+  if (savedSummarizer === undefined) delete globalThis.Summarizer;
+  else globalThis.Summarizer = savedSummarizer;
+}
+
+// Case 10 (regression): onProgress reports "part N of M" during the chunk map
+// pass so long-page summarization doesn't look frozen. It must fire once per
+// chunk with a stable total, use phase 'summarizing' on the first pass, and
+// NOT fire at all when the input fits in a single call.
+{
+  const savedSummarizer = globalThis.Summarizer;
+  const QUOTA = 500;
+  globalThis.Summarizer = {
+    async availability() { return 'available'; },
+    async create() {
+      return {
+        inputQuota: QUOTA,
+        async measureInputUsage(t) { return Math.ceil(t.length / 10); },
+        async summarize() { return 'partial'; },
+        destroy() {}
+      };
+    }
+  };
+
+  // --- Large input: progress must fire. ---
+  const events = [];
+  const longText = Array.from({ length: 40 }, (_, i) => `P${i}` + 'z'.repeat(990)).join('\n\n');
+  await builtinSummarize(longText, {
+    language: 'English',
+    summaryLevel: 'short',
+    onProgress: (p) => events.push(p)
+  });
+
+  assertTrue(events.length > 0, 'onProgress fires for oversized (chunked) input');
+  const firstPass = events.filter((e) => e.phase === 'summarizing');
+  assertTrue(firstPass.length > 1,
+    'first map pass reports more than one part (page was split)');
+  const totalsStable = firstPass.every((e) => e.total === firstPass[0].total);
+  assertTrue(totalsStable,
+    `"of M" total is stable across the map pass (got ${firstPass.map((e) => e.total).join(',')})`);
+  const currentsSequential = firstPass.every((e, i) => e.current === i + 1);
+  assertTrue(currentsSequential,
+    `part numbers count up 1..M without gaps (got ${firstPass.map((e) => e.current).join(',')})`);
+  assertTrue(firstPass[firstPass.length - 1].current === firstPass[0].total,
+    'the last announced part equals the announced total (N of M ends at M)');
+
+  // --- Small input: progress must NOT fire (single-shot path). ---
+  const smallEvents = [];
+  await builtinSummarize('short text that easily fits', {
+    language: 'English',
+    summaryLevel: 'short',
+    onProgress: (p) => smallEvents.push(p)
+  });
+  assertTrue(smallEvents.length === 0,
+    'onProgress does NOT fire when input fits in a single summarize() call');
+
+  if (savedSummarizer === undefined) delete globalThis.Summarizer;
+  else globalThis.Summarizer = savedSummarizer;
+}
+
 // ============================================
 // api/providers/index.js: selectProvider / listAvailableProviders
 // ============================================
