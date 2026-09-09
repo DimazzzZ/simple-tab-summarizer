@@ -47,11 +47,15 @@ export async function checkAuthStatus(dom, debugLog, availableProviders = []) {
 export function updateAuthUI(dom, authenticated, availableProviders = [], language = 'English', preference = 'auto') {
   const hasBuiltin = availableProviders.includes('chrome-builtin');
   const hasChatgpt = availableProviders.includes('chatgpt-codex');
+  // Keep the visible label short (the row is a ~350px flex line with an icon
+  // and a button). Detail goes into the title tooltip.
+  let label;
+  let tooltip = '';
   if (authenticated) {
     dom.authIcon.classList.remove('disconnected');
     dom.authIcon.classList.add('connected');
     dom.authIcon.innerHTML = AUTH_ICONS.connected;
-    dom.authText.textContent = authStatusText(hasBuiltin, hasChatgpt, preference);
+    label = authStatusText(hasBuiltin, hasChatgpt, preference);
     dom.connectBtn.classList.add('hidden');
     dom.disconnectBtn.classList.remove('hidden');
   } else {
@@ -59,19 +63,26 @@ export function updateAuthUI(dom, authenticated, availableProviders = [], langua
     dom.authIcon.classList.add('disconnected');
     dom.authIcon.innerHTML = AUTH_ICONS.disconnected;
     if (hasBuiltin) {
-      dom.authText.textContent = preference === 'chatgpt-codex'
-        ? 'Sign in to use ChatGPT (built-in AI ready as fallback)'
-        : 'Ready (built-in AI) — or sign in for ChatGPT';
+      if (preference === 'chatgpt-codex') {
+        label = 'Built-in AI ready';
+        tooltip = 'Sign in to use ChatGPT; built-in AI is used as a fallback.';
+      } else {
+        label = 'Built-in AI ready';
+        tooltip = 'On-device built-in AI is ready. Sign in for ChatGPT if you prefer.';
+      }
     } else if (!BUILTIN_LANGUAGES.includes(language)) {
-      // Built-in AI doesn't support this language, and the user isn't signed
-      // in to ChatGPT — tell them exactly what to do.
-      dom.authText.textContent = `Sign in to ChatGPT for ${language} (built-in AI supports only EN, JA, ES, DE, FR)`;
+      // Built-in AI doesn't support this language, and the user isn't signed in.
+      label = `Sign in for ${language}`;
+      tooltip = `Built-in AI supports only English, Japanese, Spanish, German, French. Sign in to ChatGPT to summarize in ${language}.`;
     } else {
-      dom.authText.textContent = 'Not ready (sign in to ChatGPT)';
+      label = 'Not ready';
+      tooltip = 'Sign in to ChatGPT to summarize.';
     }
     dom.connectBtn.classList.remove('hidden');
     dom.disconnectBtn.classList.add('hidden');
   }
+  dom.authText.textContent = label;
+  dom.authText.title = tooltip || label;
 }
 
 /**
@@ -83,11 +94,11 @@ export function updateAuthUI(dom, authenticated, availableProviders = [], langua
  * @returns {string}
  */
 function authStatusText(hasBuiltin, hasChatgpt, preference) {
-  if (preference === 'chrome-builtin' && hasBuiltin) return 'Using built-in AI (on-device)';
+  if (preference === 'chrome-builtin' && hasBuiltin) return 'Using built-in AI';
   if (preference === 'chatgpt-codex' && hasChatgpt) return 'Using ChatGPT';
-  if (hasBuiltin && hasChatgpt) return 'Ready (built-in + ChatGPT)';
-  if (hasChatgpt) return 'Ready (ChatGPT)';
-  return 'Connected to ChatGPT';
+  if (hasBuiltin && hasChatgpt) return 'Ready';
+  if (hasChatgpt) return 'Using ChatGPT';
+  return 'Connected';
 }
 
 /**
