@@ -282,6 +282,20 @@ npm run validate:extension
 
 # Validate statically imported ES modules are present
 npm run validate:imports
+
+# Regenerate the Chrome Web Store "What's new" block in STORE_LISTING.md
+# from CHANGELOG.md for the current manifest version
+npm run store:listing
+
+# Print the paste-ready store description to stdout
+npm run store:listing:stdout
+
+# Regenerate the in-extension "What's new" data module from STORE_LISTING.md
+# (also runs automatically as part of `npm run build`)
+npm run whatsnew:data
+
+# Verify the committed data module is in sync with STORE_LISTING.md (CI guard)
+npm run whatsnew:check
 ```
 
 ### Releasing
@@ -290,13 +304,27 @@ Releases are automated and driven entirely by CI — tags and releases are never
 created by hand. To cut a release:
 
 1. Bump the `manifest.json` version and update `CHANGELOG.md`, then commit and push.
-2. In the **Actions** tab, run the **Release** workflow and enter the version (e.g. `1.2.5`).
+2. Run `npm run store:listing` to add a "What's new" block for the new version to
+   `STORE_LISTING.md`, optionally polish the wording, and commit it. CI fails a
+   release whose version has no block.
+   The in-extension "What's new" panel reads from these same blocks: run
+   `npm run whatsnew:data` to regenerate `constants/whats-new-data.generated.js`
+   and commit it alongside `STORE_LISTING.md` (`npm run build` regenerates it
+   automatically, and CI's `whatsnew:check` fails on drift).
+3. In the **Actions** tab, run the **Release** workflow and enter the version (e.g. `1.2.5`).
 
 The [`Release` workflow](.github/workflows/release.yml) runs tests, builds and
 validates the ZIP, creates the git tag and GitHub Release, and — if Chrome Web
 Store credentials are configured — uploads the ZIP to the store and submits it
 for review. See [docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
 for one-time OAuth setup.
+
+The Chrome Web Store API cannot update the listing **description** or "What's
+new" text — those are editable only in the Developer Dashboard. So the Release
+workflow instead generates the paste-ready description from `STORE_LISTING.md`
+and publishes it as both a `store-listing-v<version>` artifact and a job-summary
+block. After a release, copy that text into the Dashboard → *Store listing →
+Description*.
 
 ## Privacy
 

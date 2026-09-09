@@ -63,6 +63,44 @@ jobs:
           fi
           echo "Version matches: $MANIFEST_VERSION"
 
+      # The Chrome Web Store API cannot write the listing description / "What's
+      # new" text — it's editable only in the Developer Dashboard. So instead of
+      # publishing it, we generate the paste-ready text here and surface it as
+      # (1) a downloadable artifact and (2) the job summary, so a human can
+      # copy-paste it into the Dashboard once per release.
+      - name: Generate store listing "What's new" text
+        id: store-listing
+        env:
+          VERSION: ${{ steps.resolve-version.outputs.version }}
+        run: |
+          # Fail if this version has no "What's new" block (someone forgot to
+          # run `npm run store:listing` before tagging the release).
+          node scripts/generate-store-listing.mjs --check --version "$VERSION"
+
+          # Emit the full paste-ready Store Description body to a file.
+          OUT="store-listing-v${VERSION}.txt"
+          node scripts/generate-store-listing.mjs --stdout --version "$VERSION" > "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+          # Surface it in the job summary for one-click copy-paste.
+          {
+            echo "## 📋 Chrome Web Store listing for v${VERSION}"
+            echo ""
+            echo "The Chrome Web Store API can't update the listing description."
+            echo "Copy the text below into the Developer Dashboard → Store listing → Description."
+            echo ""
+            echo '```text'
+            cat "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload store listing text artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-listing-v${{ steps.resolve-version.outputs.version }}
+          path: ${{ steps.store-listing.outputs.path }}
+          retention-days: 30
+
       - name: Install zip utility
         run: sudo apt-get install -y zip
 

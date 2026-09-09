@@ -59,6 +59,23 @@ jobs:
       - name: Validate ESM import graph
         run: node scripts/validate-extension-imports.mjs .
 
+      - name: Check store listing has a block for the manifest version
+        run: |
+          # The Chrome Web Store description is maintained in STORE_LISTING.md
+          # and generated from CHANGELOG.md. This guards against tagging a
+          # release whose version has no "What's new" block yet.
+          # Lenient: only requires a block to exist, so manual wording polish
+          # is allowed. Run `npm run store:listing` to add a missing block.
+          npm run store:listing:check
+
+      - name: Check "What's new" data module is in sync with STORE_LISTING.md
+        run: |
+          # The in-extension "What's new" panel reads from a committed module
+          # generated from STORE_LISTING.md's blocks. This guards against the
+          # committed module drifting from the listing. Run `npm run whatsnew:data`
+          # to regenerate and commit it.
+          npm run whatsnew:check
+
       - name: Check required files exist
         run: |
           for file in manifest.json background.js content.js popup.html popup.js sidebar.html sidebar.js ui-controller.js styles.css PRIVACY.md README.md; do
