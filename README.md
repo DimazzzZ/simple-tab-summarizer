@@ -9,11 +9,11 @@
   <a href="manifest.json">
     <img src="https://img.shields.io/badge/Chrome%20Extension-MV3-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension MV3" />
   </a>
-  <a href="https://chatgpt.com/">
-    <img src="https://img.shields.io/badge/ChatGPT-Required-brightgreen.svg?logo=data:image/svg%2bxml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgcm9sZT0iaW1nIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgoKICAgIDxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9fdHJhY2VyQ2FycmllciIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CgogICAgPGcgaWQ9IlNWR1JlcG9faWNvbkNhcnJpZXIiPgoKICAgICAgICA8dGl0bGU+T3BlbkFJIGljb248L3RpdGxlPgoKICAgICAgICA8cGF0aCBkPSJNMjIuMjgxOSA5LjgyMTFhNS45ODQ3IDUuOTg0NyAwIDAgMC0uNTE1Ny00LjkxMDggNi4wNDYyIDYuMDQ2MiAwIDAgMC02LjUwOTgtMi45QTYuMDY1MSA2LjA2NTEgMCAwIDAgNC45ODA3IDQuMTgxOGE1Ljk4NDcgNS45ODQ3IDAgMCAwLTMuOTk3NyAyLjkgNi4wNDYyIDYuMDQ2MiAwIDAgMCAuNzQyNyA3LjA5NjYgNS45OCA1Ljk4IDAgMCAwIC41MTEgNC45MTA3IDYuMDUxIDYuMDUxIDAgMCAwIDYuNTE0NiAyLjkwMDFBNS45ODQ3IDUuOTg0NyAwIDAgMCAxMy4yNTk5IDI0YTYuMDU1NyA2LjA1NTcgMCAwIDAgNS43NzE4LTQuMjA1OCA1Ljk4OTQgNS45ODk0IDAgMCAwIDMuOTk3Ny0yLjkwMDEgNi4wNTU3IDYuMDU1NyAwIDAgMC0uNzQ3NS03LjA3Mjl6bS05LjAyMiAxMi42MDgxYTQuNDc1NSA0LjQ3NTUgMCAwIDEtMi44NzY0LTEuMDQwOGwuMTQxOS0uMDgwNCA0Ljc3ODMtMi43NTgyYS43OTQ4Ljc5NDggMCAwIDAgLjM5MjctLjY4MTN2LTYuNzM2OWwyLjAyIDEuMTY4NmEuMDcxLjA3MSAwIDAgMSAuMDM4LjA1MnY1LjU4MjZhNC41MDQgNC41MDQgMCAwIDEtNC40OTQ1IDQuNDk0NHptLTkuNjYwNy00LjEyNTRhNC40NzA4IDQuNDcwOCAwIDAgMS0uNTM0Ni0zLjAxMzdsLjE0Mi4wODUyIDQuNzgzIDIuNzU4MmEuNzcxMi43NzEyIDAgMCAwIC43ODA2IDBsNS44NDI4LTMuMzY4NXYyLjMzMjRhLjA4MDQuMDgwNCAwIDAgMS0uMDMzMi4wNjE1TDkuNzQgMTkuOTUwMmE0LjQ5OTIgNC40OTkyIDAgMCAxLTYuMTQwOC0xLjY0NjR6TTIuMzQwOCA3Ljg5NTZhNC40ODUgNC40ODUgMCAwIDEgMi4zNjU1LTEuOTcyOFYxMS42YS43NjY0Ljc2NjQgMCAwIDAgLjM4NzkuNjc2NWw1LjgxNDQgMy4zNTQzLTIuMDIwMSAxLjE2ODVhLjA3NTcuMDc1NyAwIDAgMS0uMDcxIDBsLTQuODMwMy0yLjc4NjVBNC41MDQgNC41MDQgMCAwIDEgMi4zNDA4IDcuODcyem0xNi41OTYzIDMuODU1OEwxMy4xMDM4IDguMzY0IDE1LjExOTIgNy4yYS4wNzU3LjA3NTcgMCAwIDEgLjA3MSAwbDQuODMwMyAyLjc5MTNhNC40OTQ0IDQuNDk0NCAwIDAgMS0uNjc2NSA4LjEwNDJ2LTUuNjc3MmEuNzkuNzkgMCAwIDAtLjQwNy0uNjY3em0yLjAxMDctMy4wMjMxbC0uMTQyLS4wODUyLTQuNzczNS0yLjc4MThhLjc3NTkuNzc1OSAwIDAgMC0uNzg1NCAwTDkuNDA5IDkuMjI5N1Y2Ljg5NzRhLjA2NjIuMDY2MiAwIDAgMSAuMDI4NC0uMDYxNWw0LjgzMDMtMi43ODY2YTQuNDk5MiA0LjQ5OTIgMCAwIDEgNi42ODAyIDQuNjZ6TTguMzA2NSAxMi44NjNsLTIuMDItMS4xNjM4YS4wODA0LjA4MDQgMCAwIDEtLjAzOC0uMDU2N1Y2LjA3NDJhNC40OTkyIDQuNDk5MiAwIDAgMSA3LjM3NTctMy40NTM3bC0uMTQyLjA4MDVMOC43MDQgNS40NTlhLjc5NDguNzk0OCAwIDAgMC0uMzkyNy42ODEzem0xLjA5NzYtMi4zNjU0bDIuNjAyLTEuNDk5OCAyLjYwNjkgMS40OTk4djIuOTk5NGwtMi41OTc0IDEuNDk5Ny0yLjYwNjctMS40OTk3WiIvPgoKICAgIDwvZz4KCjwvc3ZnPgo=" alt="ChatGPT Account Required" />
+  <a href="https://developer.chrome.com/docs/ai/summarizer-api">
+    <img src="https://img.shields.io/badge/Built--in%20AI-Zero%20Auth-brightgreen?logo=googlechrome&logoColor=white" alt="Chrome Built-in AI (Zero Auth)" />
   </a>
   <a href="manifest.json">
-    <img src="https://img.shields.io/badge/Version-1.2.3-lightgrey" alt="Version 1.2.3" />
+    <img src="https://img.shields.io/badge/Version-1.3.0-lightgrey" alt="Version 1.3.0" />
   </a>
   <a href="tests/">
     <img src="https://img.shields.io/badge/Tested%20with-Playwright-2e7d32" alt="Tested with Playwright" />
@@ -24,24 +24,28 @@
 </p>
 
 A Chrome Extension (Manifest V3) that reads the content of the current tab, selected tabs from a tab group, or pages
-from Chrome's Reading List, summarizes them using the ChatGPT Codex API, and presents the result in a popup or
-persistent sidebar panel.
+from Chrome's Reading List, summarizes them using **Chrome's built-in AI (Gemini Nano, on-device)** by default — no
+sign-up required, nothing leaves your device — and presents the result in a popup or persistent sidebar panel. For
+languages the built-in model doesn't yet support (~35 beyond the initial 5), you can optionally sign in to ChatGPT.
 
 ## Free to Use
 
-**This extension itself is free to use.** You need a ChatGPT/OpenAI account to connect it. OpenAI offers a free ChatGPT
-tier for many users, so you may be able to start without a paid subscription. Availability, supported features, and
-usage limits depend on OpenAI's current policies and your account status, and may change over time.
-Check [OpenAI's official pricing and usage documentation](https://openai.com/pricing) for the latest details.
+**This extension is free and works out-of-the-box** on Chrome 138+ with no account or API key. By default, it uses
+Chrome's built-in Summarizer API (Gemini Nano), which runs entirely on-device — your data never leaves your machine.
+
+The built-in AI supports English, Japanese, Spanish, German, and French. If you want to summarize in one of the other
+~35 languages (Arabic, Chinese, Russian, Thai, etc.), you can optionally sign in to a ChatGPT/OpenAI account. OpenAI
+offers a free tier for many users; availability and limits depend on [OpenAI's current policies](https://openai.com/pricing).
 
 ## Features
 
 - 📄 **Current Tab Summarization** — Summarize the active tab with one click (default mode)
 - 📑 **Tab Group Summarization** — Extract and summarize all tabs in a selected tab group with live auto-refresh
 - 📖 **Reading List Summarization** — Summarize pages saved to Chrome's Reading List with live auto-refresh
-- 🤖 **AI-powered summarization** via ChatGPT Codex API with streaming responses and configurable verbosity (Short, Medium, Detailed)
+- 🧠 **Built-in AI (Gemini Nano)** — The default. Zero-auth, on-device summarization via Chrome's Summarizer API (Chrome 138+). Supports English, Japanese, Spanish, German, French. Nothing leaves your device.
+- 🤖 **ChatGPT fallback** — Optional. Only used for the ~35 languages the built-in model doesn't cover yet. Requires ChatGPT sign-in; streaming responses and configurable verbosity (Short, Medium, Detailed).
 - 🚀 **Expand Summary** — View summaries in a full-page overlay on the active tab for better readability
-- 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account, with automatic token refresh
+- 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account (only needed for extra languages), with automatic token refresh
 - 🌐 **Summary Language Selector** — Choose output language from 40+ languages (A-Z sorted)
 - 📌 **Popup / Sidebar Display Mode** — Toggle between a compact popup and a persistent sidebar panel with shared session state
 - 🛠️ **Item Management** — Close tabs or remove reading list entries directly from the selection lists
@@ -63,9 +67,12 @@ simple-tab-summarizer/
 ├── styles.css               # Shared UI styling
 ├── background.js            # Service worker (OAuth, summarization, display mode control)
 ├── content.js               # Fast content extraction script (textContent-based)
+├── shadow-monkeypatch-world.js  # Captures closed shadow roots for extraction (MAIN world)
 ├── package.json             # Node.js dependencies and npm scripts
 ├── package-lock.json        # Locked dependency versions
 ├── playwright.config.js     # Playwright E2E test configuration
+├── api/
+│   └── codex-client.js      # Codex API client: request assembly, model fallback, SSE parsing
 ├── constants/               # UI keys and shared constants
 ├── dom/                     # DOM binding helpers
 ├── features/                # Core logic modules (auth, extraction, summarize, etc.)
@@ -79,15 +86,23 @@ simple-tab-summarizer/
 │   ├── icon48.png           # Extension page icon (48x48)
 │   └── icon128.png          # Chrome Web Store icon (128x128)
 ├── scripts/
-│   └── generate-icons.sh    # Icon generation script
+│   ├── generate-icons.sh              # Icon generation script
+│   ├── package-extension.sh           # Build & package the extension ZIP
+│   ├── prepare-screenshots.sh         # Prepare store screenshots
+│   ├── validate-extension-files.mjs   # Verify manifest-declared resources exist in the build
+│   └── validate-extension-imports.mjs # Verify statically imported ES modules are packaged
 ├── tests/
 │   ├── e2e/                 # Playwright E2E tests
 │   │   └── popup.spec.js
 │   └── unit/                # Unit tests
+│       ├── chrome-mock.js           # Minimal chrome global shim for Node
 │       ├── test-background.js
-│       └── test-extraction.js
+│       ├── test-extraction.js
+│       └── test-package-cleanup.mjs # Packaging/zip-cleanup regression tests
+├── CHANGELOG.md             # Release notes
 ├── PRIVACY.md               # Privacy policy
 ├── STORE_LISTING.md         # Chrome Web Store listing
+├── PUBLISHING_AUDIT.md      # Publishing audit & status
 ├── .gitignore               # Git ignore rules
 └── README.md                # This file
 ```
@@ -102,10 +117,13 @@ simple-tab-summarizer/
 4. Select the `simple-tab-summarizer` folder
 5. The extension icon should appear in your toolbar
 
-### 2. Authenticate with ChatGPT
+### 2. Authenticate with ChatGPT (optional — only for extra languages)
+
+The built-in AI handles English, Japanese, Spanish, German, and French with no sign-in. If you want to summarize in
+one of the other ~35 languages (Arabic, Chinese, Russian, Thai, etc.), sign in to ChatGPT:
 
 1. Click the extension icon to open the popup
-2. Click **Connect to ChatGPT**
+2. Click **Sign in**
 3. An OpenAI sign-in page will open in a new tab
 4. Sign in with your OpenAI/ChatGPT account
 5. After successful authentication, the callback is intercepted and tokens are stored automatically
@@ -168,15 +186,33 @@ The extension injects a content script into each tab that:
 3. Falls back further to metadata (title, meta description, headings, first paragraphs)
 4. Truncates to 4,000 characters per tab for efficiency
 
+Special handling:
+
+- **Closed shadow DOM**: A companion script (`shadow-monkeypatch-world.js`) runs in the MAIN execution world to capture references to shadow roots at `attachShadow` time. This makes content in closed shadow DOMs (e.g., Skilljar on Vue 3) accessible for extraction.
+- **Google Docs**: Text rendered on `<canvas>` is recovered by parsing the `DOCS_modelChunk` JSON embedded in the page.
+- **Dynamic pages**: Async extraction waits up to 3 seconds for JavaScript-heavy pages (Atlassian, Google Dev Blog, etc.) to hydrate before extracting.
+- **Unicode-safe**: Uses `\p{L}|\p{N}` regex so Cyrillic, CJK, and other non-Latin text is preserved.
+
 ### Summarization (`background.js`)
 
-The service worker:
+The extension uses a **provider abstraction** (`api/providers/`) to select the best summarization backend:
 
-1. Collects content from all selected tabs or reading list entries
+- **Chrome built-in AI** (`chrome-builtin`): Uses the `Summarizer` global (Chrome 138+) directly in the popup/sidebar page context. Runs fully on-device, no network, no auth. Supports English, Japanese, Spanish, German, French. On first use, Chrome downloads the Gemini Nano model (~2 GB); subsequent calls are instant.
+- **ChatGPT/Codex** (`chatgpt-codex`): Delegates to the service worker (`background.js` → `api/codex-client.js`), which owns the OAuth token and network call. Supports 40+ languages.
+
+Provider selection is language-aware: if the chosen language is supported by the built-in model and the API is available, it's used automatically. Otherwise, the extension falls back to ChatGPT (if signed in) or shows a clear message about what's needed.
+
+The ChatGPT/Codex path works as follows:
+
+1. Collects content from all selected tabs or reading list entries (via the service worker)
 2. Builds a structured prompt with page titles and URLs
 3. Truncates if content exceeds token limits
 4. Sends to the ChatGPT Codex API (`https://chatgpt.com/backend-api/codex/responses`) with `stream: true`
+   - Uses a model fallback chain: `gpt-5.6-luna` → `gpt-5.6-terra` → `gpt-5.5`
+   - If the backend rejects a model with a 400 "model not supported" error, automatically retries with the next candidate
 5. Parses the SSE stream (`response.output_text.delta` events) to build the summary
+   - Handles malformed SSE data lines by checking error *type* (`instanceof SyntaxError`) instead of string matching
+   - This makes parsing resilient to V8 version changes (e.g., Node 24 vs 26 error message differences)
 6. Returns the summary to the popup or sidebar panel
 
 ### Display Mode Management (`background.js`)
@@ -222,6 +258,76 @@ The popup and sidebar share a common `UIController` class (`ui-controller.js`):
 | Reading List empty                        | Add pages to your Reading List first (right-click page → "Add to Reading List") |
 | Sidebar not showing                       | Click the 📌 Sidebar button in the popup to switch to sidebar mode              |
 | Summary seems incorrect                   | Try a different language or check the debug console for API errors              |
+
+## Development
+
+### Running Tests
+
+```bash
+# Unit tests (extraction, background logic, packaging)
+npm run test:unit
+
+# E2E tests (requires Playwright browsers installed)
+npm run test:e2e
+
+# All tests
+npm test
+```
+
+### Building
+
+```bash
+# Package the extension into a ZIP in dist/
+npm run build
+
+# Validate manifest-declared resources exist
+npm run validate:extension
+
+# Validate statically imported ES modules are present
+npm run validate:imports
+
+# Regenerate the Chrome Web Store "What's new" block in STORE_LISTING.md
+# from CHANGELOG.md for the current manifest version
+npm run store:listing
+
+# Print the paste-ready store description to stdout
+npm run store:listing:stdout
+
+# Regenerate the in-extension "What's new" data module from STORE_LISTING.md
+# (also runs automatically as part of `npm run build`)
+npm run whatsnew:data
+
+# Verify the committed data module is in sync with STORE_LISTING.md (CI guard)
+npm run whatsnew:check
+```
+
+### Releasing
+
+Releases are automated and driven entirely by CI — tags and releases are never
+created by hand. To cut a release:
+
+1. Bump the `manifest.json` version and update `CHANGELOG.md`, then commit and push.
+2. Run `npm run store:listing` to add a "What's new" block for the new version to
+   `STORE_LISTING.md`, optionally polish the wording, and commit it. CI fails a
+   release whose version has no block.
+   The in-extension "What's new" panel reads from these same blocks: run
+   `npm run whatsnew:data` to regenerate `constants/whats-new-data.generated.js`
+   and commit it alongside `STORE_LISTING.md` (`npm run build` regenerates it
+   automatically, and CI's `whatsnew:check` fails on drift).
+3. In the **Actions** tab, run the **Release** workflow and enter the version (e.g. `1.2.5`).
+
+The [`Release` workflow](.github/workflows/release.yml) runs tests, builds and
+validates the ZIP, creates the git tag and GitHub Release, and — if Chrome Web
+Store credentials are configured — uploads the ZIP to the store and submits it
+for review. See [docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
+for one-time OAuth setup.
+
+The Chrome Web Store API cannot update the listing **description** or "What's
+new" text — those are editable only in the Developer Dashboard. So the Release
+workflow instead generates the paste-ready description from `STORE_LISTING.md`
+and publishes it as both a `store-listing-v<version>` artifact and a job-summary
+block. After a release, copy that text into the Dashboard → *Store listing →
+Description*.
 
 ## Privacy
 

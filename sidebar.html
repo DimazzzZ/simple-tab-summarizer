@@ -17,13 +17,33 @@
       </button>
     </header>
 
-    <!-- Compact Auth Row -->
+    <!-- What's New (shown after an update) -->
+    <div id="whatsnew-banner" class="whatsnew-banner hidden">
+      <span class="whatsnew-banner-text">Updated to v<span id="whatsnew-version"></span> — see what's new</span>
+      <button id="whatsnew-open" class="btn-compact">View</button>
+      <button id="whatsnew-dismiss" class="whatsnew-dismiss" title="Dismiss" aria-label="Dismiss">×</button>
+    </div>
+    <div id="whatsnew-panel" class="card whatsnew-panel hidden">
+      <div class="whatsnew-panel-header">
+        <h2 id="whatsnew-panel-title">What's new</h2>
+        <button id="whatsnew-close" class="btn-small">Close</button>
+      </div>
+      <div id="whatsnew-panel-body" class="whatsnew-panel-body"></div>
+    </div>
+
+    <!-- Compact Auth Row: the provider selector carries the readiness status
+         in its own option labels (✓ ready, ↓ downloads on first use), so there
+         is no separate status label. Icon + sign-in stay. -->
     <div id="auth-section" class="auth-row-compact">
       <span id="auth-icon" class="auth-icon-compact disconnected">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </span>
-      <span id="auth-text" class="auth-text-compact">Not connected</span>
-      <button id="connect-btn" class="btn-compact">Connect</button>
+      <select id="provider-select" class="provider-select-inline" aria-label="AI Provider and status" title="AI Provider">
+        <option value="auto" selected>Auto</option>
+        <option value="chrome-builtin">Built-in AI</option>
+        <option value="chatgpt-codex">ChatGPT</option>
+      </select>
+      <button id="connect-btn" class="btn-compact">Sign in</button>
       <button id="disconnect-btn" class="btn-compact hidden">Disconnect</button>
     </div>
 

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-08
+
+### Added
+- **Chrome Built-in AI (Gemini Nano) is now the default, zero-auth provider**: Summaries run on Chrome's on-device Summarizer API (Gemini Nano) — no sign-up, no API key, no network round-trip. The built-in model handles English, Japanese, Spanish, German, and French entirely on-device. Available on Chrome 138+ with adequate hardware (see [Summarizer API requirements](https://developer.chrome.com/docs/ai/summarizer-api#hardware)).
+- **ChatGPT is now a fallback only for unsupported languages**: For the ~35 languages in the dropdown that the built-in model doesn't cover yet, the extension routes to ChatGPT — but only when you're signed in. If you only use the five built-in languages, no account is ever required. The UI reflects which provider is in use (`Ready (built-in AI)`, `Ready (ChatGPT)`, `Ready (built-in + ChatGPT)`).
+- **Provider Abstraction (`api/providers/`)**: New `api/providers/{chrome-builtin,chatgpt-codex,index}.js` modules cleanly separate provider implementations from selection logic, so future providers (e.g., Prompt API, Writer API, other clouds) drop in without churning `background.js` or the UI.
+- **User-Facing Provider Choice**: A new **AI Provider** dropdown in the popup/sidebar lets users explicitly pick between `Automatic (built-in AI first)`, `Built-in AI (on-device, private)`, and `ChatGPT (sign-in, extra languages)`. The choice is persisted per user. When the selected provider can't serve the current language (e.g. built-in for Russian), the extension gracefully falls back to any usable provider rather than failing.
+- **Language-Specific Guidance in Auth Row**: When no provider can serve the current language, the auth-row now explains why (e.g. `Sign in to ChatGPT for Russian (built-in AI supports only EN, JA, ES, DE, FR)`), so a disabled Summarize button never feels like a bug.
+
+### Changed
+- **Summarize Button No Longer Gated On ChatGPT Sign-In**: Because built-in AI is the default, users can summarize immediately with no account. The old `Please connect to ChatGPT first` hard block is removed; the button now enables whenever at least one provider can serve the currently selected language.
+- **On-Device Model Download**: On first use of the built-in provider, the loading UI shows model download progress (`Downloading on-device model: N%`). No data leaves the device.
+
+---
+
+## [1.2.4] - 2026-08-31
+
+### Fixed
+- **Summarization Failure After Model Retirement**: Migrated the default model from the retired `gpt-5.4` to `gpt-5.6-luna`, resolving the `API error (400): The 'gpt-5.4' model is not supported when using Codex with a ChatGPT account.` failure. OpenAI retired `gpt-5.4`/`gpt-5.4-mini` from Codex for ChatGPT-account sign-in on 2026-08-31.
+
+### Added
+- **Model Fallback Chain**: When the ChatGPT/Codex backend rejects a model slug with a "model not supported" 400, the extension now automatically retries with the next candidate (`gpt-5.6-luna` → `gpt-5.6-terra` → `gpt-5.5`), preventing a future model retirement from hard-breaking summary generation.
+
+---
+
 ## [1.2.3] - 2026-08-28
 
 ### Fixed

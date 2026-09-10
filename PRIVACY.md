@@ -1,6 +1,6 @@
 # Privacy Policy — Simple Tab Summarizer
 
-**Last updated:** April 20, 2026
+**Last updated:** September 8, 2026
 
 ## Overview
 

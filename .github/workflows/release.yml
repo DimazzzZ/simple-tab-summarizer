@@ -22,6 +22,8 @@ jobs:
   package:
     needs: checks
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve-version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
 
@@ -30,15 +32,74 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Resolve release version
+        id: resolve-version
+        run: |
+          # Version comes from the workflow_dispatch input.
+          VERSION="${{ inputs.version }}"
+          # Tolerate a leading "v" if the user typed one (e.g. "v1.2.5").
+          VERSION="${VERSION#v}"
+          if [ -z "$VERSION" ]; then
+            echo "❌ Version input is required (e.g. 1.2.5)"
+            exit 1
+          fi
+          # Guard: refuse to reuse an existing tag — forces a real version bump.
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag v$VERSION already exists on origin. Bump the version."
+            exit 1
+          fi
+          echo "Resolved version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Validate version matches manifest
+        env:
+          VERSION: ${{ steps.resolve-version.outputs.version }}
         run: |
           MANIFEST_VERSION=$(node -e "console.log(require('./manifest.json').version)")
-          if [ "$MANIFEST_VERSION" != "${{ inputs.version }}" ]; then
-            echo "Version mismatch: input=${{ inputs.version }}, manifest=$MANIFEST_VERSION"
+          if [ "$MANIFEST_VERSION" != "$VERSION" ]; then
+            echo "Version mismatch: release=$VERSION, manifest=$MANIFEST_VERSION"
             echo "Please update manifest.json version to match the release version."
             exit 1
           fi
           echo "Version matches: $MANIFEST_VERSION"
+
+      # The Chrome Web Store API cannot write the listing description / "What's
+      # new" text — it's editable only in the Developer Dashboard. So instead of
+      # publishing it, we generate the paste-ready text here and surface it as
+      # (1) a downloadable artifact and (2) the job summary, so a human can
+      # copy-paste it into the Dashboard once per release.
+      - name: Generate store listing "What's new" text
+        id: store-listing
+        env:
+          VERSION: ${{ steps.resolve-version.outputs.version }}
+        run: |
+          # Fail if this version has no "What's new" block (someone forgot to
+          # run `npm run store:listing` before tagging the release).
+          node scripts/generate-store-listing.mjs --check --version "$VERSION"
+
+          # Emit the full paste-ready Store Description body to a file.
+          OUT="store-listing-v${VERSION}.txt"
+          node scripts/generate-store-listing.mjs --stdout --version "$VERSION" > "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+          # Surface it in the job summary for one-click copy-paste.
+          {
+            echo "## 📋 Chrome Web Store listing for v${VERSION}"
+            echo ""
+            echo "The Chrome Web Store API can't update the listing description."
+            echo "Copy the text below into the Developer Dashboard → Store listing → Description."
+            echo ""
+            echo '```text'
+            cat "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload store listing text artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-listing-v${{ steps.resolve-version.outputs.version }}
+          path: ${{ steps.store-listing.outputs.path }}
+          retention-days: 30
 
       - name: Install zip utility
         run: sudo apt-get install -y zip
@@ -71,13 +132,17 @@ jobs:
           echo "✅ All required files and modules present"
 
       - name: Package extension
+        env:
+          VERSION: ${{ steps.resolve-version.outputs.version }}
         run: |
           chmod +x scripts/package-extension.sh
-          ./scripts/package-extension.sh "${{ inputs.version }}"
+          ./scripts/package-extension.sh "$VERSION"
 
       - name: Validate packaged ZIP contents
+        env:
+          VERSION: ${{ steps.resolve-version.outputs.version }}
         run: |
-          ZIP_FILE="dist/simple-tab-summarizer-v${{ inputs.version }}.zip"
+          ZIP_FILE="dist/simple-tab-summarizer-v${VERSION}.zip"
           echo "Validating ZIP contents..."
           unzip -l "$ZIP_FILE"
           EXTRACT_DIR=$(mktemp -d)
@@ -97,14 +162,85 @@ jobs:
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: simple-tab-summarizer-v${{ inputs.version }}
-          path: dist/simple-tab-summarizer-v${{ inputs.version }}.zip
+          name: simple-tab-summarizer-v${{ steps.resolve-version.outputs.version }}
+          path: dist/simple-tab-summarizer-v${{ steps.resolve-version.outputs.version }}.zip
           retention-days: 30
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.resolve-version.outputs.version }}
         run: |
+          # Create and push the git tag at the current commit
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "✅ Created and pushed tag v$VERSION"
+
+          # Create the GitHub Release pointing at that tag
           printf '## Simple Tab Summarizer v%s\n\n### Chrome Web Store\nInstall the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol)\n\n---\n' "$VERSION" > release-notes.md
           gh release create "v$VERSION" "dist/simple-tab-summarizer-v$VERSION.zip" --title "v$VERSION" --notes-file release-notes.md --generate-notes
+          echo "✅ Created GitHub Release v$VERSION"
+
+  publish-to-chrome-web-store:
+    needs: package
+    runs-on: ubuntu-latest
+    # Guard: only run if Chrome Web Store secrets are configured.
+    # This lets the workflow succeed on first setup before secrets exist,
+    # and lets fork PRs run without failing on missing secrets.
+    if: ${{ needs.package.result == 'success' }}
+    env:
+      VERSION: ${{ needs.package.outputs.version }}
+    steps:
+      - name: Check Chrome Web Store credentials
+        id: check-secrets
+        env:
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          if [ -z "$CWS_EXTENSION_ID" ] || [ -z "$CWS_CLIENT_ID" ] || [ -z "$CWS_CLIENT_SECRET" ] || [ -z "$CWS_REFRESH_TOKEN" ]; then
+            echo "⚠️ Chrome Web Store credentials not configured — skipping publish."
+            echo "   Add CWS_EXTENSION_ID, CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN to repo secrets."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ Chrome Web Store credentials present"
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-secrets.outputs.configured == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Download packaged ZIP
+        if: steps.check-secrets.outputs.configured == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: simple-tab-summarizer-v${{ env.VERSION }}
+          path: dist
+
+      - name: Upload & publish to Chrome Web Store
+        if: steps.check-secrets.outputs.configured == 'true'
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          ZIP_FILE="dist/simple-tab-summarizer-v${VERSION}.zip"
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "❌ ZIP not found at $ZIP_FILE"
+            ls -la dist/ || true
+            exit 1
+          fi
+          echo "📦 Uploading $ZIP_FILE and submitting for review (item $EXTENSION_ID)"
+          # Running with no subcommand does upload + publish in one step.
+          # CLIENT_ID / CLIENT_SECRET / REFRESH_TOKEN / EXTENSION_ID are read
+          # from the environment.
+          npx --yes chrome-webstore-upload-cli@3 \
+            --source "$ZIP_FILE"
+          echo "✅ Submitted v$VERSION to Chrome Web Store — Google review is now pending"

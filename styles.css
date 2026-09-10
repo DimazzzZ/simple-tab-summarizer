@@ -245,13 +245,6 @@ body.sidebar-mode .action-bar {
   color: var(--color-warning);
 }
 
-#auth-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-on-surface-variant);
-  flex: 1;
-}
-
 /* Auth buttons row - side by side with status */
 .auth-row {
   display: flex;
@@ -306,16 +299,6 @@ body.sidebar-mode .action-bar {
   color: var(--color-warning);
 }
 
-.auth-text-compact {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-on-surface-variant);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .btn-compact {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 11px;
@@ -340,6 +323,67 @@ body.sidebar-mode .action-bar {
 
 .btn-compact.hidden {
   display: none;
+}
+
+/*
+ * Subtle variant: used when the button represents an OPTIONAL action (e.g.
+ * "Sign in to ChatGPT" while built-in AI is already ready). Renders as a
+ * low-emphasis text link so the primary filled style stays reserved for
+ * actions the user actually needs to take.
+ */
+.btn-compact.btn-subtle {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: transparent;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.btn-compact.btn-subtle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-primary-hover);
+  text-decoration-thickness: 2px;
+}
+
+/*
+ * Inline provider selector: lives INSIDE the compact auth row, not in a form
+ * group. Overrides the base `select` (which is width:100% and larger) so it
+ * fits alongside the status text and Sign-in button on a single line.
+ */
+/*
+ * Inline provider selector: lives INSIDE the compact auth row. It's the
+ * SOLE surface for provider readiness — the ✓ / ↓ / "sign in needed" state
+ * lives in each option's label, so this element must be wide enough to
+ * display the currently-selected label without truncation. Takes the
+ * flexible space that #auth-text used to occupy (flex: 1) but caps its
+ * growth so the Sign-in button on the right stays visible.
+ */
+.provider-select-inline {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 220px;
+  padding: var(--spacing-xs) 26px var(--spacing-xs) var(--spacing-sm);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  border-radius: var(--radius-full);
+  background-position: right 8px center;
+  background-size: 12px 12px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/*
+ * Disabled options inside the provider selector still need to be visible
+ * (so users can see WHY they can't pick them) but should look inert. Most
+ * browsers already dim disabled <option>s; make the intent explicit.
+ */
+.provider-select-inline option:disabled {
+  color: var(--color-on-surface-variant);
 }
 
 /* Empty state compact (inside config card) */
@@ -993,4 +1037,89 @@ body.sidebar-mode .action-bar {
   .container {
     padding: var(--spacing-md);
   }
+}
+
+/* ============================================
+   What's New (after-update notes)
+   ============================================ */
+.whatsnew-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1);
+  background: var(--color-surface);
+  border-left: 3px solid var(--color-primary);
+}
+
+.whatsnew-banner-text {
+  flex: 1;
+  font-size: var(--font-size-sm, 13px);
+  color: var(--color-text, inherit);
+}
+
+.whatsnew-dismiss {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #5f6368);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--radius-sm);
+}
+
+.whatsnew-dismiss:hover {
+  color: var(--color-text, inherit);
+}
+
+.whatsnew-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.whatsnew-panel-header h2 {
+  margin: 0;
+  font-size: var(--font-size-md, 15px);
+}
+
+.whatsnew-panel-body .whatsnew-version-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.whatsnew-panel-body .whatsnew-version-section:last-child {
+  margin-bottom: 0;
+}
+
+.whatsnew-panel-body h3 {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-sm, 13px);
+  color: var(--color-primary);
+}
+
+.whatsnew-panel-body ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.whatsnew-panel-body li {
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm, 13px);
+  line-height: 1.4;
+}
+
+.whatsnew-lead {
+  display: block;
+  font-weight: 600;
+}
+
+.whatsnew-detail {
+  display: block;
+  color: var(--color-text-secondary, #5f6368);
+  font-size: 12px;
+  line-height: 1.35;
 }

@@ -15,6 +15,8 @@ import { loadTabGroups, handleGroupSelect } from './features/tab-groups.js';
 import { loadReadingList, removeReadingListEntry, refreshReadingList } from './features/reading-list.js';
 import { handleSummarize } from './features/summarize.js';
 import { setupTabLifecycleListeners, setupReadingListLifecycleListeners } from './lifecycle/listeners.js';
+import { listAvailableProviders, builtinAvailability } from './api/providers/index.js';
+import { WHATS_NEW } from './constants/whats-new-data.generated.js';
 
 export class UIController {
   constructor(dom, options = {}) {
@@ -29,6 +31,15 @@ export class UIController {
     this.selectedReadingListIds = new Set();
     this.selectedReadingListUrls = new Set();
     this.isAuthenticated = false;
+    this.availableProviders = [];
+    // Raw built-in-model status, cached for the session and refreshed whenever
+    // we re-probe providers (UI open, language change, provider change). Lets
+    // the header say "ready" vs "downloads on first use" precisely.
+    // 'unavailable' | 'downloadable' | 'downloading' | 'available'
+    this.builtinStatus = 'unavailable';
+    // User's provider choice: 'auto' | 'chrome-builtin' | 'chatgpt-codex'.
+    // 'auto' = registry priority (built-in first when available).
+    this.providerPreference = 'auto';
     this.allGroups = [];
     this.debugEnabled = false;
     this.currentSource = SourceType.CURRENT_TAB;
@@ -53,12 +64,14 @@ export class UIController {
   }
 
   async loadSettings() {
-    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage', 'summaryLevel']);
+    const result = await chrome.storage.local.get(['debugEnabled', 'summaryLanguage', 'summaryLevel', 'providerPreference']);
     this.debugEnabled = result.debugEnabled || false;
     this.dom.debugToggle.checked = this.debugEnabled;
     this.updateDebugVisibility();
     if (result.summaryLanguage) this.dom.languageSelect.value = result.summaryLanguage;
     if (result.summaryLevel) this.dom.summaryLevelSelect.value = result.summaryLevel;
+    if (result.providerPreference) this.providerPreference = result.providerPreference;
+    if (this.dom.providerSelect) this.dom.providerSelect.value = this.providerPreference;
     await this.updateModeToggleLabel();
     await this.loadSharedContext();
     this.setupStorageListener();
@@ -160,6 +173,80 @@ export class UIController {
   async saveSetting(key, value) { await chrome.storage.local.set({ [key]: value }); }
   updateDebugVisibility() { this.dom.debugSection.classList.toggle('hidden', !this.debugEnabled); }
 
+  // ── "What's new" after-update notes ──────────────────────────────────────
+  // Asks the background worker which versions have unseen release notes; if any,
+  // reveals the dismissible banner. Opening or dismissing marks them as seen.
+  async checkWhatsNew() {
+    try {
+      const resp = await chrome.runtime.sendMessage({ action: 'get_whats_new' });
+      if (!resp || resp.error) return;
+      this._unseenWhatsNew = Array.isArray(resp.versions) ? resp.versions : [];
+      if (this._unseenWhatsNew.length === 0) return;
+      if (this.dom.whatsnewVersion) this.dom.whatsnewVersion.textContent = resp.currentVersion || '';
+      if (this.dom.whatsnewBanner) this.dom.whatsnewBanner.classList.remove('hidden');
+    } catch (e) {
+      // Non-fatal: worst case the user just doesn't see the banner.
+      this.debugLog(`What's new check failed: ${e.message}`, 'error');
+    }
+  }
+
+  async _markWhatsNewSeen() {
+    try { await chrome.runtime.sendMessage({ action: 'whats_new_seen' }); } catch {}
+  }
+
+  handleWhatsNewOpen() {
+    this._renderWhatsNewPanel(this._unseenWhatsNew || []);
+    if (this.dom.whatsnewBanner) this.dom.whatsnewBanner.classList.add('hidden');
+    if (this.dom.whatsnewPanel) this.dom.whatsnewPanel.classList.remove('hidden');
+    this._markWhatsNewSeen();
+  }
+
+  handleWhatsNewDismiss() {
+    if (this.dom.whatsnewBanner) this.dom.whatsnewBanner.classList.add('hidden');
+    this._markWhatsNewSeen();
+  }
+
+  handleWhatsNewClose() {
+    if (this.dom.whatsnewPanel) this.dom.whatsnewPanel.classList.add('hidden');
+  }
+
+  _renderWhatsNewPanel(versions) {
+    const body = this.dom.whatsnewPanelBody;
+    if (!body) return;
+    body.innerHTML = '';
+    for (const version of versions) {
+      const entry = WHATS_NEW[version];
+      if (!entry) continue;
+      const section = document.createElement('section');
+      section.className = 'whatsnew-version-section';
+      const h3 = document.createElement('h3');
+      h3.textContent = entry.title || `What's new in ${version}`;
+      section.appendChild(h3);
+      const ul = document.createElement('ul');
+      for (const bullet of entry.bullets || []) {
+        const li = document.createElement('li');
+        // Store-voice bullets are "Lead-In: long explanation". Show the lead-in
+        // bold and the detail in lighter, smaller text so the panel scans fast.
+        const sep = bullet.indexOf(': ');
+        if (sep > 0 && sep < 40) {
+          const strong = document.createElement('strong');
+          strong.className = 'whatsnew-lead';
+          strong.textContent = bullet.slice(0, sep);
+          const detail = document.createElement('span');
+          detail.className = 'whatsnew-detail';
+          detail.textContent = bullet.slice(sep + 2);
+          li.appendChild(strong);
+          li.appendChild(detail);
+        } else {
+          li.textContent = bullet;
+        }
+        ul.appendChild(li);
+      }
+      section.appendChild(ul);
+      body.appendChild(section);
+    }
+  }
+
   setupEventListeners() {
     const { dom } = this;
     if (dom.modeToggle) dom.modeToggle.addEventListener('click', async () => { if (this.onModeToggle) await this.onModeToggle(); await this.updateModeToggleLabel(); });
@@ -177,8 +264,29 @@ export class UIController {
     if (dom.stopBtn) dom.stopBtn.addEventListener('click', () => this.handleStop());
     dom.clearDebugBtn.addEventListener('click', () => { dom.debugConsole.innerHTML = ''; this.debugLog('Debug console cleared'); });
     dom.debugToggle.addEventListener('change', async () => { this.debugEnabled = dom.debugToggle.checked; await this.saveSetting('debugEnabled', this.debugEnabled); this.updateDebugVisibility(); this.debugLog(`Debug console ${this.debugEnabled ? 'enabled' : 'disabled'}`); });
-    dom.languageSelect.addEventListener('change', async () => { await this.saveSetting('summaryLanguage', dom.languageSelect.value); this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`); });
+    dom.languageSelect.addEventListener('change', async () => {
+      await this.saveSetting('summaryLanguage', dom.languageSelect.value);
+      this.debugLog(`Summary language changed to: ${dom.languageSelect.value}`);
+      // Provider availability depends on language (built-in supports only 5 langs).
+      await this.refreshAvailableProviders();
+      await this._renderAuthUI(dom.languageSelect.value);
+      this.updateButtonsState();
+    });
+    if (dom.providerSelect) {
+      dom.providerSelect.addEventListener('change', async () => {
+        this.providerPreference = dom.providerSelect.value || 'auto';
+        await this.saveSetting('providerPreference', this.providerPreference);
+        this.debugLog(`Provider preference changed to: ${this.providerPreference}`);
+        // Preference doesn't change which providers exist, but the option
+        // labels + which one is selected depend on it.
+        await this._renderAuthUI(dom.languageSelect.value);
+        this.updateButtonsState();
+      });
+    }
     dom.summaryLevelSelect.addEventListener('change', async () => { await this.saveSetting('summaryLevel', dom.summaryLevelSelect.value); this.debugLog(`Summary level changed to: ${dom.summaryLevelSelect.value}`); });
+    if (dom.whatsnewOpen) dom.whatsnewOpen.addEventListener('click', () => this.handleWhatsNewOpen());
+    if (dom.whatsnewDismiss) dom.whatsnewDismiss.addEventListener('click', () => this.handleWhatsNewDismiss());
+    if (dom.whatsnewClose) dom.whatsnewClose.addEventListener('click', () => this.handleWhatsNewClose());
     this._tabCleanup = setupTabLifecycleListeners(this, () => this.debouncedRefreshSelectedGroup());
     this._readingListCleanup = setupReadingListLifecycleListeners(this, () => this.debouncedRefreshReadingList());
   }
@@ -215,20 +323,81 @@ export class UIController {
     } catch (error) { this.debugLog(`Error refreshing group tabs: ${error.message}`, 'error'); }
   }
 
-  async checkAuthStatus() { this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this)); this.updateButtonsState(); }
+  async refreshAvailableProviders() {
+    try {
+      const language = this.dom.languageSelect?.value || 'English';
+      const [providers, builtinStatus] = await Promise.all([
+        listAvailableProviders(language, { isAuthenticated: this.isAuthenticated }),
+        builtinAvailability()
+      ]);
+      this.availableProviders = providers.map(p => p.name);
+      this.builtinStatus = builtinStatus;
+      this.debugLog(`Available providers for ${language}: ${this.availableProviders.join(', ') || '(none)'} (built-in: ${builtinStatus})`);
+    } catch (e) {
+      this.availableProviders = [];
+      this.builtinStatus = 'unavailable';
+      this.debugLog(`Provider probe failed: ${e.message}`, 'error');
+    }
+  }
 
-  updateAuthUI(authenticated) { updateAuthUI(this.dom, authenticated); this.updateButtonsState(); }
+  async checkAuthStatus() {
+    this.isAuthenticated = await checkAuthStatus(this.dom, this.debugLog.bind(this), []);
+    // Now that we know auth state, probe providers and re-render the auth UI.
+    await this.refreshAvailableProviders();
+    await this._renderAuthUI(this.dom.languageSelect?.value || 'English');
+    this.updateButtonsState();
+  }
+
+  updateAuthUI(authenticated) {
+    this.isAuthenticated = authenticated;
+    // Fire-and-forget: the render is synchronous except for the storage write
+    // that only happens on an auto-fallback (rare). Callers of this method
+    // don't await it today, so we keep the signature sync-friendly.
+    void this._renderAuthUI(this.dom.languageSelect?.value || 'English');
+    this.updateButtonsState();
+  }
+
+  /**
+   * Renders the auth UI and reconciles a possible auto-fallback.
+   *
+   * `updateAuthUI` (the imported one) returns `{ fellBackToAuto }` when the
+   * user's selected provider became unusable and the <select> was reset to
+   * 'auto'. Because assigning `select.value` in code does NOT emit a 'change'
+   * event, the provider-select listener never runs — so WE must sync our own
+   * `providerPreference` + persisted storage here, or the two silently drift.
+   * @param {string} language
+   */
+  async _renderAuthUI(language) {
+    const { fellBackToAuto } = updateAuthUI(
+      this.dom, this.isAuthenticated, this.availableProviders,
+      language, this.providerPreference, this.builtinStatus
+    );
+    if (fellBackToAuto && this.providerPreference !== 'auto') {
+      this.providerPreference = 'auto';
+      await this.saveSetting('providerPreference', 'auto');
+      this.debugLog('Selected provider became unavailable — reset preference to Auto');
+    }
+  }
 
   updateButtonsState() {
     let hasSelection = false;
     if (this.currentSource === SourceType.CURRENT_TAB) hasSelection = true;
     else if (this.currentSource === SourceType.TAB_GROUP) hasSelection = this.selectedTabIds.size > 0;
     else if (this.currentSource === SourceType.READING_LIST) hasSelection = this.selectedReadingListIds.size > 0;
-    this.dom.summarizeBtn.disabled = !this.isAuthenticated || !hasSelection;
+    const hasProvider = this.availableProviders.length > 0;
+    this.dom.summarizeBtn.disabled = !hasProvider || !hasSelection;
   }
 
-  async handleConnect() { await handleConnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom)); }
-  async handleDisconnect() { await handleDisconnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom), () => hideSummary(this.dom)); }
+  async handleConnect() {
+    await handleConnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom));
+    // Re-probe auth + providers after the OAuth flow so the UI reflects the new state.
+    await this.checkAuthStatus();
+  }
+  async handleDisconnect() {
+    await handleDisconnect(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m), () => hideError(this.dom), () => hideSummary(this.dom));
+    // Re-probe so the ChatGPT provider is removed from availableProviders.
+    await this.checkAuthStatus();
+  }
 
   async loadTabGroups() { this.allGroups = await loadTabGroups(this.dom, this.debugLog.bind(this), (m) => showError(this.dom, m)); }
 
@@ -353,10 +522,17 @@ export class UIController {
 
   async handleSummarize() {
     await handleSummarize({
-      source: this.currentSource, dom: this.dom, groupTabs: this.groupTabs,
-      selectedTabIds: this.selectedTabIds, readingListEntries: this.readingListEntries,
-      selectedReadingListIds: this.selectedReadingListIds, isAuthenticated: this.isAuthenticated,
-      debugLog: this.debugLog.bind(this), updateButtonsState: () => this.updateButtonsState()
+      source: this.currentSource,
+      dom: this.dom,
+      groupTabs: this.groupTabs,
+      selectedTabIds: this.selectedTabIds,
+      readingListEntries: this.readingListEntries,
+      selectedReadingListIds: this.selectedReadingListIds,
+      isAuthenticated: this.isAuthenticated,
+      availableProviders: this.availableProviders,
+      providerPreference: this.providerPreference,
+      debugLog: this.debugLog.bind(this),
+      updateButtonsState: () => this.updateButtonsState()
     });
     this._saveSessionState();
   }

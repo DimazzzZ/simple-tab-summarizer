@@ -5,6 +5,10 @@
 export const SHARED_CONTEXT_KEY = 'shared_ui_context';
 export const SHARED_SESSION_KEY = 'shared_ui_session';
 
+// Last extension version whose "What's new" notes the user has acknowledged.
+// Absent => never acknowledged (fresh install sets it to the current version).
+export const LAST_SEEN_WHATS_NEW_KEY = 'last_seen_whats_new_version';
+
 export const SourceType = Object.freeze({
   CURRENT_TAB: 'currentTab',
   TAB_GROUP: 'tabGroup',
