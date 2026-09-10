@@ -319,7 +319,7 @@ created by hand. To cut a release:
 The [`Release` workflow](.github/workflows/release.yml) runs tests, builds and
 validates the ZIP, creates the git tag and GitHub Release, and — if Chrome Web
 Store credentials are configured — uploads the ZIP to the store and submits it
-for review. See [docs/CHROME_WEB_STORE_PUBLISHING.md](docs/CHROME_WEB_STORE_PUBLISHING.md)
+for review. See [internal-docs/CHROME_WEB_STORE_PUBLISHING.md](internal-docs/CHROME_WEB_STORE_PUBLISHING.md)
 for one-time OAuth setup.
 
 The Chrome Web Store API cannot update the listing **description** or "What's

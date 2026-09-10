@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Tab Summarizer — Private on-device AI summaries for Chrome</title>
+  <meta name="description" content="A Chrome extension that summarizes tabs, tab groups, and your reading list using Chrome's built-in on-device AI (Gemini Nano). No sign-up, no API key, nothing leaves your device by default." />
+  <link rel="icon" href="assets/icon128.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <meta property="og:title" content="Simple Tab Summarizer" />
+  <meta property="og:description" content="Private, on-device AI summaries for tabs, tab groups, and your reading list. No sign-up. Nothing leaves your device by default." />
+  <meta property="og:type" content="website" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="./">
+        <img src="assets/icon128.png" alt="" />
+        Simple Tab Summarizer
+      </a>
+      <nav class="nav">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="https://github.com/DimazzzZ/simple-tab-summarizer">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <img class="logo" src="assets/icon128.png" alt="Simple Tab Summarizer icon" />
+        <h1>Private, on-device AI summaries for Chrome</h1>
+        <p class="tagline">
+          Summarize the current tab, a whole tab group, or your reading list — using Chrome's built-in AI (Gemini Nano),
+          running entirely on your device. No sign-up, no API key, and nothing leaves your machine by default.
+        </p>
+        <div class="badges">
+          <span class="badge">🧠 On-device by default</span>
+          <span class="badge">🔐 Zero-auth</span>
+          <span class="badge">🆓 Free</span>
+          <span class="badge">🌐 40+ languages</span>
+        </div>
+        <a class="cta" href="https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol">Install from Chrome Web Store</a>
+        <a class="cta secondary" href="https://github.com/DimazzzZ/simple-tab-summarizer">View source</a>
+      </div>
+    </section>
+
+    <section id="privacy">
+      <div class="container">
+        <div class="privacy-box">
+          <h2>Privacy first, by design</h2>
+          <p>
+            By default, the extension summarizes using <strong>Chrome's built-in AI (Gemini Nano)</strong>, which runs
+            entirely on your device. The text of the pages you summarize <strong>never leaves your machine</strong>.
+          </p>
+          <p>
+            If you need to summarize in a language the built-in model doesn't yet support (roughly 35 additional
+            languages), you can optionally sign in to ChatGPT — that content is then sent to OpenAI only for those
+            summaries. If you stick to the built-in languages (English, Japanese, Spanish, German, French), no account
+            is ever required.
+          </p>
+          <p style="margin-bottom: 0;">
+            Read the full <a href="privacy.html">privacy policy</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="container">
+        <h2>What it does</h2>
+        <p class="section-lead">One-click summaries for however you browse.</p>
+        <div class="grid">
+          <div class="card">
+            <span class="emoji">📄</span>
+            <h3>Current tab</h3>
+            <p>Summarize the page you're on with a single click.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">📑</span>
+            <h3>Tab groups</h3>
+            <p>Select and summarize an entire tab group at once, with live auto-refresh as tabs change.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">📖</span>
+            <h3>Reading list</h3>
+            <p>Summarize pages you've saved to Chrome's Reading List without opening each one.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">🧠</span>
+            <h3>On-device AI</h3>
+            <p>Uses Chrome's Summarizer API (Gemini Nano) on Chrome 138+. Private, offline-capable, free.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">🤖</span>
+            <h3>Optional ChatGPT fallback</h3>
+            <p>Sign in only if you need a language the built-in model doesn't yet support.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">📌</span>
+            <h3>Popup or sidebar</h3>
+            <p>Compact popup or persistent side panel — both share the same session state.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">🎚️</span>
+            <h3>Configurable verbosity</h3>
+            <p>Short, Medium, or Detailed summaries to match how much time you have.</p>
+          </div>
+          <div class="card">
+            <span class="emoji">🌐</span>
+            <h3>40+ languages</h3>
+            <p>5 handled on-device by built-in AI; the rest via the optional ChatGPT fallback.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2>See it in action</h2>
+        <p class="section-lead">Popup mode, tab-group summaries, and the persistent sidebar.</p>
+        <div class="shots">
+          <figure>
+            <img src="assets/screenshot-current-tab.png" alt="Popup summarizing the current tab" />
+            <figcaption>Current tab summary in the popup</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/screenshot-tab-group.png" alt="Summary of an entire tab group" />
+            <figcaption>Whole-tab-group summary</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/screenshot-sidebar.png" alt="Sidebar panel with a persistent summary" />
+            <figcaption>Persistent sidebar panel</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container" style="text-align:center;">
+        <h2>Try it now</h2>
+        <p class="section-lead">Free, open source, private by default.</p>
+        <a class="cta" href="https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol">Install from Chrome Web Store</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        Simple Tab Summarizer is open source under the MIT license.
+        <a href="https://github.com/DimazzzZ/simple-tab-summarizer">Source on GitHub</a> ·
+        <a href="privacy.html">Privacy Policy</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,22 +1,27 @@
 # Privacy Policy — Simple Tab Summarizer
 
-**Last updated:** September 8, 2026
+**Last updated:** September 10, 2026
 
 ## Overview
 
-Simple Tab Summarizer is a Chrome Extension that summarizes web page content using AI. This privacy policy explains what data the extension collects, how it is used, and where it is sent.
+Simple Tab Summarizer is a Chrome Extension that summarizes web page content using AI. This privacy policy explains what data the extension processes, how it is used, and where it is (or is not) sent.
+
+**Short version:** By default, summarization runs entirely on your device using Chrome's built-in AI (Gemini Nano). In that mode, the page text you summarize never leaves your machine. If you choose to sign in to ChatGPT to summarize in languages the built-in model does not yet support, that text is sent to OpenAI's servers only for those summaries.
 
 ## Data Collection and Usage
 
 ### Page Content
-- **What is collected:** The extension extracts text content from the currently active tab or selected tabs (titles, URLs, and page text).
-- **How it is used:** The extracted content is sent to the ChatGPT API (`chatgpt.com`) to generate an AI-powered summary.
-- **Where it is sent:** Content is sent directly to OpenAI/ChatGPT's servers for processing. No content is stored permanently by the extension.
+- **What is processed:** The extension extracts text content from tabs, tab groups, or reading list entries that you explicitly choose to summarize (titles, URLs, and page text).
+- **Where it is processed:**
+  - **Built-in AI (default, on-device):** For English, Japanese, Spanish, German, and French, summarization runs locally in Chrome's built-in AI (Gemini Nano). The extracted content **never leaves your device** — no network request carries it off your machine.
+  - **ChatGPT fallback (opt-in):** If you sign in to ChatGPT and choose a summary language the built-in model does not yet support (roughly 35 additional languages), the extracted content is sent to OpenAI's servers (`chatgpt.com`) to generate that summary. This only happens when you have signed in and made that language choice.
+- **Retention:** The extension does not store page content persistently. Summaries are held in memory for display and cleared when you close the popup/sidebar or navigate away.
 
 ### Authentication
-- **What is collected:** OAuth tokens (access token, refresh token) from OpenAI/ChatGPT authentication.
+- **When it applies:** Only if you choose to enable the ChatGPT fallback by signing in. If you only ever use the built-in on-device provider, the extension collects no authentication data.
+- **What is collected:** OAuth tokens (access token, refresh token) issued by OpenAI when you sign in.
 - **How it is used:** Tokens are stored locally in your browser (`chrome.storage.local`) to maintain your authenticated session and automatically refresh your access token when it expires.
-- **Where it is stored:** Tokens are stored only in your local browser storage. They are never transmitted to any server other than OpenAI's authentication servers.
+- **Where it is stored / sent:** Tokens are stored only in your local browser storage. They are transmitted only to OpenAI's own authentication and API servers, never to any third party.
 
 ### Settings
 - **What is collected:** Your display mode preference (popup vs. sidebar), debug console setting, selected summary language, and summary verbosity level (short, medium, or detailed).
@@ -24,14 +29,16 @@ Simple Tab Summarizer is a Chrome Extension that summarizes web page content usi
 
 ## Data Sharing
 
-- **No data is sold or shared** with third parties beyond what is necessary for the extension to function.
-- Page content is sent **only** to OpenAI/ChatGPT's API for summarization.
+- **No data is sold or shared** with third parties.
+- Page content is never sent anywhere when the built-in on-device provider is used.
+- Page content is sent **only** to OpenAI/ChatGPT's API, and **only** when you have signed in and selected a language the built-in model does not support.
 - No analytics, tracking, or advertising services are used.
 - No data is shared with the extension developer.
 
 ## User Control
 
-- **Disconnect:** You can disconnect from ChatGPT at any time by clicking the "Disconnect" button in the extension. This does not delete stored tokens — you may need to clear browser data to fully remove them.
+- **Stay on-device:** In the extension's AI Provider setting, choose **Built-in AI only** to ensure summaries are never sent to any external service, regardless of the selected language. If a language is unsupported by the on-device model in that mode, the extension will simply refuse to summarize rather than fall back to ChatGPT.
+- **Disconnect from ChatGPT:** If you previously signed in, you can disconnect from ChatGPT at any time from the extension. This clears stored OAuth tokens.
 - **Clear data:** You can clear all stored data (including tokens and settings) by removing the extension or clearing your browser's extension storage.
 - **Uninstall:** Removing the extension will delete all locally stored data.
 
@@ -42,7 +49,7 @@ Simple Tab Summarizer is a Chrome Extension that summarizes web page content usi
 | `tabs` | To query and read information about your open tabs |
 | `tabGroups` | To identify and list your tab groups for selection |
 | `scripting` | To inject a content extraction script into web pages |
-| `storage` | To store OAuth tokens, settings, and preferences locally |
+| `storage` | To store settings, preferences, and (only if you sign in to ChatGPT) OAuth tokens locally |
 | `readingList` | To access your Chrome Reading List entries for summarization |
 | `sidePanel` | To enable the sidebar panel display mode |
 | `<all_urls>` (host permission) | To extract content from any web page you choose to summarize |
