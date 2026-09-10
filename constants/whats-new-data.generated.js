@@ -6,11 +6,11 @@ export const WHATS_NEW = {
   "1.3.0": {
     title: "What's new in 1.3.0",
     bullets: [
-      "Zero-Auth Built-in AI: Now summarizes on-device with Chrome's built-in AI (Gemini Nano) by default — no sign-up, no API key, nothing leaves your device. Requires Chrome 138+ with supported hardware. ChatGPT sign-in is now optional.",
-      "Smart Provider Selection: Built-in AI handles English, Japanese, Spanish, German, and French locally; other languages use ChatGPT when you're signed in. The status shows which AI is in use.",
-      "Choose Your AI: A new AI Provider option lets you pick Automatic, Built-in AI (on-device, private), or ChatGPT (sign-in, 40+ languages), and remembers your choice.",
-      "Summarize Without an Account: If built-in AI is available, the Summarize button works right away — the old \"connect to ChatGPT first\" requirement is gone.",
-      "On-Device Model Download: On first use, a progress indicator shows the built-in model downloading. No data leaves your device."
+      "On-Device AI by Default: Summaries now run on Chrome's built-in AI (Gemini Nano) — on-device, private, no sign-up, no API key. Requires Chrome 138+ with supported hardware.",
+      "Built-in AI Languages: English, Japanese, Spanish, German, and French are handled entirely on-device. Nothing leaves your machine.",
+      "ChatGPT Only for Extra Languages: The other ~35 languages in the dropdown use ChatGPT — only if you sign in. If you stick to the built-in languages, no account is needed at all.",
+      "Choose Your AI: A new AI Provider option lets you pick Automatic (built-in AI first), Built-in AI only, or ChatGPT only. Your choice is remembered.",
+      "On-Device Model Download: On first use, a progress bar shows the built-in model downloading (~2 GB, one-time). No data leaves your device."
     ]
   },
   "1.2.4": {

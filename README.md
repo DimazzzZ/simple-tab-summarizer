@@ -24,28 +24,28 @@
 </p>
 
 A Chrome Extension (Manifest V3) that reads the content of the current tab, selected tabs from a tab group, or pages
-from Chrome's Reading List, summarizes them using **Chrome's built-in AI (Gemini Nano, on-device)** — no sign-up
-required — and presents the result in a popup or persistent sidebar panel. Optionally sign in to ChatGPT for 40+
-language support and higher-quality summaries.
+from Chrome's Reading List, summarizes them using **Chrome's built-in AI (Gemini Nano, on-device)** by default — no
+sign-up required, nothing leaves your device — and presents the result in a popup or persistent sidebar panel. For
+languages the built-in model doesn't yet support (~35 beyond the initial 5), you can optionally sign in to ChatGPT.
 
 ## Free to Use
 
-**This extension is free and works out-of-the-box** on Chrome 138+ with no account or API key. It uses Chrome's
-built-in Summarizer API (Gemini Nano) which runs entirely on-device — your data never leaves your machine.
+**This extension is free and works out-of-the-box** on Chrome 138+ with no account or API key. By default, it uses
+Chrome's built-in Summarizer API (Gemini Nano), which runs entirely on-device — your data never leaves your machine.
 
-The built-in AI supports English, Japanese, Spanish, German, and French. For other languages (40+ in the dropdown),
-you can optionally sign in to a ChatGPT/OpenAI account. OpenAI offers a free tier for many users; availability and
-limits depend on [OpenAI's current policies](https://openai.com/pricing).
+The built-in AI supports English, Japanese, Spanish, German, and French. If you want to summarize in one of the other
+~35 languages (Arabic, Chinese, Russian, Thai, etc.), you can optionally sign in to a ChatGPT/OpenAI account. OpenAI
+offers a free tier for many users; availability and limits depend on [OpenAI's current policies](https://openai.com/pricing).
 
 ## Features
 
 - 📄 **Current Tab Summarization** — Summarize the active tab with one click (default mode)
 - 📑 **Tab Group Summarization** — Extract and summarize all tabs in a selected tab group with live auto-refresh
 - 📖 **Reading List Summarization** — Summarize pages saved to Chrome's Reading List with live auto-refresh
-- 🤖 **AI-powered summarization** via ChatGPT Codex API with streaming responses and configurable verbosity (Short, Medium, Detailed)
-- 🧠 **Built-in AI (Gemini Nano)** — Zero-auth, on-device summarization via Chrome's Summarizer API (Chrome 138+). Supports English, Japanese, Spanish, German, French.
+- 🧠 **Built-in AI (Gemini Nano)** — The default. Zero-auth, on-device summarization via Chrome's Summarizer API (Chrome 138+). Supports English, Japanese, Spanish, German, French. Nothing leaves your device.
+- 🤖 **ChatGPT fallback** — Optional. Only used for the ~35 languages the built-in model doesn't cover yet. Requires ChatGPT sign-in; streaming responses and configurable verbosity (Short, Medium, Detailed).
 - 🚀 **Expand Summary** — View summaries in a full-page overlay on the active tab for better readability
-- 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account, with automatic token refresh
+- 🔐 **OAuth 2.0 PKCE authentication** — Sign in with your OpenAI/ChatGPT account (only needed for extra languages), with automatic token refresh
 - 🌐 **Summary Language Selector** — Choose output language from 40+ languages (A-Z sorted)
 - 📌 **Popup / Sidebar Display Mode** — Toggle between a compact popup and a persistent sidebar panel with shared session state
 - 🛠️ **Item Management** — Close tabs or remove reading list entries directly from the selection lists
@@ -117,10 +117,13 @@ simple-tab-summarizer/
 4. Select the `simple-tab-summarizer` folder
 5. The extension icon should appear in your toolbar
 
-### 2. Authenticate with ChatGPT
+### 2. Authenticate with ChatGPT (optional — only for extra languages)
+
+The built-in AI handles English, Japanese, Spanish, German, and French with no sign-in. If you want to summarize in
+one of the other ~35 languages (Arabic, Chinese, Russian, Thai, etc.), sign in to ChatGPT:
 
 1. Click the extension icon to open the popup
-2. Click **Connect to ChatGPT**
+2. Click **Sign in**
 3. An OpenAI sign-in page will open in a new tab
 4. Sign in with your OpenAI/ChatGPT account
 5. After successful authentication, the callback is intercepted and tokens are stored automatically

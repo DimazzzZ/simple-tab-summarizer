@@ -2,26 +2,32 @@
 
 ## Store Description
 
-Free AI summarizer for tabs, tab groups, and reading lists. Get instant summaries in 40+ languages with ChatGPT.
+Private, on-device AI summaries for tabs, tab groups, and reading lists. No sign-up. No API key. Nothing leaves your device.
 
-Simple Tab Summarizer uses AI to summarize web pages, tab groups, and reading lists — saving you time and screen space.
+Simple Tab Summarizer runs on Chrome's built-in AI (Gemini Nano) — the same on-device model Chrome ships with — so summaries are generated locally on your machine. Just install it and click Summarize. Optional ChatGPT sign-in only if you need a language the on-device model doesn't cover yet.
+
+How the AI works:
+- On-device by default — Chrome's built-in AI (Gemini Nano) summarizes everything locally. Free, private, no account.
+- Requires Chrome 138+ with supported hardware. First use downloads the model (~2 GB, one-time), shown as a progress bar.
+- Built-in AI languages: English, Japanese, Spanish, German, French.
+- Optional ChatGPT fallback — only used when you pick a summary language the built-in model doesn't yet support (the other ~35 languages in the dropdown). If you never pick one of those languages, you never need to sign in.
 
 Features:
-- Current Tab Summary — Get a quick summary of the active tab with one click
-- Tab Group Summarization — Select and summarize all tabs in a group at once with live auto-refresh
-- Reading List Summarization — Summarize pages saved to Chrome's Reading List with live auto-refresh
-- Configurable Verbosity — Choose between Short, Medium, or Detailed summary levels
-- Expand Summary — View summaries in a full-page overlay for better readability
-- 40+ Languages — Choose your summary language from Arabic to Vietnamese
-- Popup or Sidebar — Use as a compact popup or a persistent sidebar panel with shared session state
-- Free to Use — The extension itself is free. You connect it with your ChatGPT/OpenAI account. OpenAI offers a free ChatGPT tier for many users, but availability, supported features, and usage limits depend on OpenAI's current policies and your account status.
+- Current Tab Summary — one-click summary of the active tab
+- Tab Group Summarization — select and summarize a whole tab group at once, with live auto-refresh
+- Reading List Summarization — summarize pages saved to Chrome's Reading List, with live auto-refresh
+- Configurable Verbosity — Short, Medium, or Detailed
+- Expand Summary — view the result in a full-page overlay on the active tab
+- 40+ Languages — 5 handled on-device by built-in AI, the rest via optional ChatGPT fallback
+- Popup or Sidebar — compact popup or persistent side panel, with shared session state
+- Free — the extension itself is free. The default (built-in AI) is free forever with no account. If you opt into the ChatGPT fallback for extra languages, availability and limits depend on your OpenAI account and their current policies.
 
 What's new in 1.3.0:
-- Zero-Auth Built-in AI: Now summarizes on-device with Chrome's built-in AI (Gemini Nano) by default — no sign-up, no API key, nothing leaves your device. Requires Chrome 138+ with supported hardware. ChatGPT sign-in is now optional.
-- Smart Provider Selection: Built-in AI handles English, Japanese, Spanish, German, and French locally; other languages use ChatGPT when you're signed in. The status shows which AI is in use.
-- Choose Your AI: A new AI Provider option lets you pick Automatic, Built-in AI (on-device, private), or ChatGPT (sign-in, 40+ languages), and remembers your choice.
-- Summarize Without an Account: If built-in AI is available, the Summarize button works right away — the old "connect to ChatGPT first" requirement is gone.
-- On-Device Model Download: On first use, a progress indicator shows the built-in model downloading. No data leaves your device.
+- On-Device AI by Default: Summaries now run on Chrome's built-in AI (Gemini Nano) — on-device, private, no sign-up, no API key. Requires Chrome 138+ with supported hardware.
+- Built-in AI Languages: English, Japanese, Spanish, German, and French are handled entirely on-device. Nothing leaves your machine.
+- ChatGPT Only for Extra Languages: The other ~35 languages in the dropdown use ChatGPT — only if you sign in. If you stick to the built-in languages, no account is needed at all.
+- Choose Your AI: A new AI Provider option lets you pick Automatic (built-in AI first), Built-in AI only, or ChatGPT only. Your choice is remembered.
+- On-Device Model Download: On first use, a progress bar shows the built-in model downloading (~2 GB, one-time). No data leaves your device.
 
 What's new in 1.2.4:
 - Summarization Fix: Restored summaries after OpenAI retired the previous model — now uses gpt-5.6-luna
@@ -68,7 +74,7 @@ How to use:
 5. Review the summary in the popup, or expand it to a full-page overlay
 
 Privacy:
-This extension extracts text content from web pages you choose and sends it to ChatGPT's API for summarization. No data is stored, sold, or shared beyond what is necessary for the extension to function. See our full privacy policy at: https://github.com/DimazzzZ/simple-tab-summarizer/blob/main/PRIVACY.md
+By default, summarization runs entirely on-device with Chrome's built-in AI — the text of the pages you choose never leaves your machine. Only if you opt into the ChatGPT fallback (for languages the built-in model doesn't support) is that text sent to ChatGPT's API for summarization. No data is stored, sold, or shared beyond what is necessary for the extension to function. See our full privacy policy at: https://github.com/DimazzzZ/simple-tab-summarizer/blob/main/PRIVACY.md
 
 Official website:
 https://github.com/DimazzzZ/simple-tab-summarizer
