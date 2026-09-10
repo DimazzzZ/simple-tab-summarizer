@@ -178,8 +178,32 @@ jobs:
           git push origin "v$VERSION"
           echo "✅ Created and pushed tag v$VERSION"
 
-          # Create the GitHub Release pointing at that tag
-          printf '## Simple Tab Summarizer v%s\n\n### Chrome Web Store\nInstall the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol)\n\n---\n' "$VERSION" > release-notes.md
+          # Build human-readable release notes from the matching CHANGELOG.md
+          # section, so the GitHub Release actually describes what changed
+          # instead of just linking to the store. Falls back to a minimal
+          # header if the version has no CHANGELOG entry.
+          {
+            printf '## Simple Tab Summarizer v%s\n\n' "$VERSION"
+
+            CHANGELOG_BODY=$(awk -v ver="$VERSION" '
+              $0 ~ "^## \\[" ver "\\]" {grab=1; next}
+              grab && /^## \[/ {exit}
+              grab && /^---[[:space:]]*$/ {next}
+              grab {print}
+            ' CHANGELOG.md)
+
+            if [ -n "$(printf '%s' "$CHANGELOG_BODY" | tr -d '[:space:]')" ]; then
+              printf '%s\n\n' "$CHANGELOG_BODY"
+            else
+              echo "⚠️ No CHANGELOG.md section found for v$VERSION — release notes will omit the changelog." >&2
+            fi
+
+            printf '### Install\n'
+            printf 'Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nfdnollcoapdoaakdfoddgciiocdlfol).\n'
+          } > release-notes.md
+
+          # --generate-notes appends the auto PR list + full-changelog compare
+          # link below our hand-written body.
           gh release create "v$VERSION" "dist/simple-tab-summarizer-v$VERSION.zip" --title "v$VERSION" --notes-file release-notes.md --generate-notes
           echo "✅ Created GitHub Release v$VERSION"
 

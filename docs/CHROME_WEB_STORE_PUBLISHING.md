@@ -55,8 +55,11 @@ It walks through:
 2. Creating an OAuth 2.0 Desktop client (yields `CLIENT_ID` and `CLIENT_SECRET`).
 3. Running a one-time consent flow to mint a `REFRESH_TOKEN`.
 
-The refresh token does not expire unless revoked, so this is a one-time setup.
-Treat all three values as secrets.
+The refresh token is long-lived **only if the OAuth consent screen is in
+"Production" publishing status**. If it's left in "Testing", Google expires
+the refresh token after **7 days** and the publish job starts failing with
+`invalid_grant` (see [Refresh token expiring after 7 days](#refresh-token-expiring-after-7-days-invalid_grant)
+below). Treat all three values as secrets.
 
 ## Cutting a release
 
@@ -97,9 +100,56 @@ from the workflow run and upload it via the developer console.
 | Symptom | Likely cause |
 |---------|-------------|
 | Job skipped with "credentials not configured" | One of the four `CWS_*` secrets is missing or empty |
-| `invalid_grant` from OAuth | Refresh token was revoked or the client was deleted — regenerate |
+| `invalid_grant` from OAuth | Refresh token expired (consent screen still in "Testing" → 7-day expiry), was revoked, or the client was deleted — [regenerate it](#refresh-token-expiring-after-7-days-invalid_grant) |
 | `ITEM_NOT_UPDATABLE` | Previous submission is still in review — wait for it to complete |
 | `ITEM_PENDING_REVIEW` | Item is currently under review; new upload rejected until it finishes |
 | Version already exists | `manifest.json` version was not bumped before tagging |
 
 See also: [Chrome Web Store Publish API docs](https://developer.chrome.com/docs/webstore/using-api).
+
+### Refresh token expiring after 7 days (`invalid_grant`)
+
+If the publish job fails at the `Fetching token...` step with:
+
+```text
+Error: Bad Request
+response: { error: 'invalid_grant', error_description: 'Bad Request' }
+```
+
+…the `CWS_REFRESH_TOKEN` secret is no longer accepted by Google. The upload
+never started — this is purely an auth failure. The most common cause is **not**
+that anyone revoked the token: it's that the Google Cloud project's **OAuth
+consent screen is still in "Testing" publishing status**, and Google expires
+refresh tokens issued by Testing-mode clients after **7 days**. A token that
+worked at the last release simply aged out.
+
+**Permanent fix — move the consent screen to Production:**
+
+1. Google Cloud Console → the project used for publishing → **APIs & Services →
+   OAuth consent screen**.
+2. If **Publishing status** is *Testing*, click **Publish app** → confirm to
+   move it to *In production*. (For a Desktop client used only by you, no
+   Google verification is required — the "unverified app" warning during the
+   consent flow is expected and harmless.)
+3. Regenerate the refresh token (next section). Tokens minted while the app is
+   *In production* are long-lived and won't age out in 7 days.
+
+**Regenerate `CWS_REFRESH_TOKEN`:**
+
+1. (If the old token might be compromised) revoke it at
+   [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+2. Re-run the one-time consent flow from
+   [github.com/fregante/chrome-webstore-upload-keys](https://github.com/fregante/chrome-webstore-upload-keys)
+   using the **same** `CLIENT_ID` / `CLIENT_SECRET` you already have. It opens a
+   browser consent prompt and prints a fresh refresh token.
+3. Update the repo secret: **Settings → Secrets and variables → Actions →
+   `CWS_REFRESH_TOKEN` → Update secret** with the new value. Leave
+   `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_EXTENSION_ID` unchanged.
+4. Re-run publishing. Because the git tag and GitHub Release for this version
+   already exist, do **not** re-run the whole Release workflow (it refuses to
+   reuse an existing tag). Instead either:
+   - **Re-run only the failed job**: Actions → the failed Release run →
+     **Re-run failed jobs**. This reuses the already-built ZIP artifact and
+     retries just `publish-to-chrome-web-store`; or
+   - **Publish manually**: download the `simple-tab-summarizer-v<version>.zip`
+     artifact from the run and upload it in the Developer Dashboard.
