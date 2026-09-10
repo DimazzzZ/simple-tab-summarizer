@@ -101,7 +101,7 @@ test.describe('Simple Tab Summarizer - Button Coverage', () => {
       const connectBtn = page.locator('#connect-btn');
       await expect(connectBtn).toBeAttached();
       await expect(connectBtn).toBeEnabled();
-      await expect(connectBtn).toHaveText('Connect');
+      await expect(connectBtn).toHaveText('Sign in');
     });
 
     test('disconnect button exists but is hidden initially', async ({ page }) => {
@@ -225,7 +225,7 @@ test.describe('Simple Tab Summarizer - Button Coverage', () => {
       
       const connectBtn = page.locator('#connect-btn');
       await expect(connectBtn).toBeAttached();
-      await expect(connectBtn).toHaveText('Connect');
+      await expect(connectBtn).toHaveText('Sign in');
     });
 
     test('sidebar mode toggle shows Popup', async ({ page }) => {
